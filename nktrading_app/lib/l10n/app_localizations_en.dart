@@ -130,4 +130,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chartScreenshot => 'Chart Screenshot';
+
+  @override
+  String get filterTrades => 'Filter Trades';
+
+  @override
+  String get dateRange => 'Date Range';
+
+  @override
+  String get selectDate => 'Select Date';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get apply => 'Apply';
+
+  @override
+  String get reset => 'Reset';
 }

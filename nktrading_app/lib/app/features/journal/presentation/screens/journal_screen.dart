@@ -1,33 +1,64 @@
 import 'package:flutter/material.dart';
 import '../../../../../main.dart';
 import 'trade_detail_screen.dart'; // Import màn hình chi tiết
+import '../../data/models/trade_filter_model.dart'; // Import
 
 class JournalScreen extends StatefulWidget {
-  const JournalScreen({super.key});
+  final TradeFilterModel filter;
+  const JournalScreen({super.key, this.filter = const TradeFilterModel()});
+
   @override
   State<JournalScreen> createState() => _JournalScreenState();
 }
 
 class _JournalScreenState extends State<JournalScreen> {
-  late Stream<List<Map<String, dynamic>>> _tradesStream;
+  late Future<List<Map<String, dynamic>>> _tradesFuture;
 
   @override
   void initState() {
     super.initState();
-    _tradesStream = supabase
-        .from('trades')
-        .stream(primaryKey: ['id'])
-        .order('created_at', ascending: false);
+    _tradesFuture = _fetchTrades();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchTrades() async {
+    final userId = supabase.auth.currentUser!.id;
+
+    // *** FIX: Bắt đầu câu truy vấn và áp dụng các bộ lọc trước ***
+    var query = supabase.from('trades').select().eq('user_id', userId);
+
+    // Áp dụng các bộ lọc
+    if (widget.filter.symbol != null) {
+      query = query.eq('symbol', widget.filter.symbol!);
+    }
+    if (widget.filter.strategy != null) {
+      query = query.eq('strategy', widget.filter.strategy!);
+    }
+    if (widget.filter.startDate != null) {
+      query = query.gte(
+        'created_at',
+        widget.filter.startDate!.toIso8601String(),
+      );
+    }
+    if (widget.filter.endDate != null) {
+      // Thêm 1 ngày để bao gồm cả ngày kết thúc
+      final inclusiveEndDate = widget.filter.endDate!.add(
+        const Duration(days: 1),
+      );
+      query = query.lt('created_at', inclusiveEndDate.toIso8601String());
+    }
+
+    // *** FIX: Gọi hàm order() ở cuối cùng ***
+    final data = await query.order('created_at', ascending: false);
+
+    return data;
   }
 
   @override
   Widget build(BuildContext context) {
-    // File này chỉ trả về nội dung bên trong, không có Scaffold
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: _tradesStream,
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _tradesFuture,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
@@ -35,14 +66,10 @@ class _JournalScreenState extends State<JournalScreen> {
         }
         final trades = snapshot.data ?? [];
         if (trades.isEmpty) {
-          return const Center(
-            child: Text('Chưa có giao dịch nào. Hãy thêm một giao dịch mới!'),
-          );
+          return const Center(child: Text('Không tìm thấy giao dịch nào.'));
         }
         return ListView.builder(
-          padding: const EdgeInsets.only(
-            bottom: 80,
-          ), // Thêm padding để FAB không che mất item cuối
+          padding: const EdgeInsets.only(bottom: 80),
           itemCount: trades.length,
           itemBuilder: (context, index) {
             final trade = trades[index];

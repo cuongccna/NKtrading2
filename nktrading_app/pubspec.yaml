@@ -40,7 +40,7 @@ dependencies:
   intl: ^0.20.2          # Thêm dòng này
   flutter_gen: ^5.10.0
   image_picker: ^1.0.7 # Thêm dòng này
-  fl_chart: ^0.66.2 # Thêm dòng này
+  fl_chart: ^1.0.0 # Thêm dòng này
 
 dev_dependencies:
   flutter_test:
@@ -51,7 +51,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

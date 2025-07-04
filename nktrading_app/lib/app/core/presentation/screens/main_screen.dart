@@ -7,6 +7,8 @@ import '../../../../main.dart';
 import '../../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../../features/journal/presentation/screens/journal_screen.dart';
 import '../../../features/journal/presentation/screens/add_trade_screen.dart'; // Import
+import '../../../features/journal/presentation/widgets/filter_dialog.dart'; // Import
+import '../../../features/journal/data/models/trade_filter_model.dart'; // Import
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,15 +19,22 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
-  Key _journalScreenKey = UniqueKey();
 
-  late final List<Widget> _widgetOptions;
+  // *** NEW: State để lưu các bộ lọc đang được áp dụng ***
+  TradeFilterModel _currentFilter = const TradeFilterModel();
+
+  late List<Widget> _widgetOptions;
 
   @override
   void initState() {
     super.initState();
+    _updateWidgetOptions();
+  }
+
+  // *** NEW: Hàm để cập nhật danh sách widget với bộ lọc mới ***
+  void _updateWidgetOptions() {
     _widgetOptions = <Widget>[
-      JournalScreen(key: _journalScreenKey),
+      JournalScreen(key: ValueKey(_currentFilter), filter: _currentFilter),
       const DashboardScreen(),
     ];
   }
@@ -41,12 +50,28 @@ class _MainScreenState extends State<MainScreen> {
         .push(MaterialPageRoute(builder: (context) => const AddTradeScreen()))
         .then((result) {
           if (result == true && mounted) {
+            // Khi thêm mới thành công, reset bộ lọc và làm mới
             setState(() {
-              _journalScreenKey = UniqueKey();
-              _widgetOptions[0] = JournalScreen(key: _journalScreenKey);
+              _currentFilter = const TradeFilterModel();
+              _updateWidgetOptions();
             });
           }
         });
+  }
+
+  // *** NEW: Hàm hiển thị hộp thoại lọc ***
+  void _showFilterDialog() async {
+    final result = await showDialog<TradeFilterModel>(
+      context: context,
+      builder: (context) => FilterDialog(initialFilter: _currentFilter),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _currentFilter = result;
+        _updateWidgetOptions();
+      });
+    }
   }
 
   @override
@@ -58,6 +83,12 @@ class _MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         title: Text(titles[_selectedIndex]),
         actions: [
+          // *** NEW: Chỉ hiển thị nút Lọc ở màn hình Nhật ký ***
+          if (_selectedIndex == 0)
+            IconButton(
+              icon: const Icon(Icons.filter_list),
+              onPressed: _showFilterDialog,
+            ),
           PopupMenuButton<Locale>(
             onSelected: (Locale locale) =>
                 NKTradingApp.setLocale(context, locale),
@@ -75,10 +106,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async {
-              // Chỉ cần gọi signOut, StreamBuilder sẽ tự động điều hướng.
-              await supabase.auth.signOut();
-            },
+            onPressed: () async => await supabase.auth.signOut(),
           ),
         ],
       ),

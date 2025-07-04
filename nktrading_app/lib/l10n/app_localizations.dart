@@ -343,6 +343,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Chart Screenshot'**
   String get chartScreenshot;
+
+  /// No description provided for @filterTrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter Trades'**
+  String get filterTrades;
+
+  /// No description provided for @dateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Date Range'**
+  String get dateRange;
+
+  /// No description provided for @selectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date'**
+  String get selectDate;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @apply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get apply;
+
+  /// No description provided for @reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get reset;
 }
 
 class _AppLocalizationsDelegate

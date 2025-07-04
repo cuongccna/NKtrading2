@@ -40,5 +40,11 @@
     "emotionTagsLabel": "Emotion Tags",
     "noValue": "None",
     "chart": "Chart",
-    "chartScreenshot": "Chart Screenshot"
+    "chartScreenshot": "Chart Screenshot",
+    "filterTrades": "Filter Trades",
+    "dateRange": "Date Range",
+    "selectDate": "Select Date",
+    "all": "All",
+    "apply": "Apply",
+    "reset": "Reset"
 }

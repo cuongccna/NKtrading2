@@ -13,17 +13,31 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  late Future<Map<String, dynamic>> _statsFuture;
+  Future<Map<String, dynamic>>? _statsFuture;
+
+  // State để quản lý bộ lọc thời gian
+  String _selectedTimeRange = 'all'; // Mặc định là 'all'
 
   @override
   void initState() {
     super.initState();
-    _statsFuture = _fetchUserStats();
+    _fetchData();
   }
 
-  Future<Map<String, dynamic>> _fetchUserStats() async {
+  // Hàm để gọi dữ liệu với bộ lọc hiện tại
+  void _fetchData() {
+    setState(() {
+      _statsFuture = _fetchUserStats(_selectedTimeRange);
+    });
+  }
+
+  Future<Map<String, dynamic>> _fetchUserStats(String timeRange) async {
     try {
-      final result = await supabase.functions.invoke('get-user-stats');
+      // Truyền timeRange vào body của request
+      final result = await supabase.functions.invoke(
+        'get-user-stats',
+        body: {'timeRange': timeRange},
+      );
       if (result.data == null) {
         throw 'Không nhận được dữ liệu từ server.';
       }
@@ -79,10 +93,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return FlSpot(index.toDouble(), (dataPoint['pnl'] as num).toDouble());
     }).toList();
 
-    // Thêm điểm bắt đầu (0, 0) vào biểu đồ
-    spots.insert(0, const FlSpot(-1, 0));
+    if (spots.isNotEmpty) {
+      spots.insert(0, FlSpot(-1, 0));
+    }
 
-    // Hàm để định dạng giá trị tiền tệ trên trục Y
     Widget leftTitleWidgets(double value, TitleMeta meta) {
       final style = TextStyle(
         color: Colors.grey.shade400,
@@ -90,9 +104,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         fontSize: 12,
       );
       String text;
-      if (value >= 1000000) {
+      if (value.abs() >= 1000000) {
         text = '${(value / 1000000).toStringAsFixed(1)}M';
-      } else if (value >= 1000) {
+      } else if (value.abs() >= 1000) {
         text = '${(value / 1000).toStringAsFixed(1)}K';
       } else {
         text = value.toStringAsFixed(0);
@@ -100,7 +114,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return Text(text, style: style, textAlign: TextAlign.center);
     }
 
-    // Hàm để định dạng ngày tháng trên trục X
     Widget bottomTitleWidgets(double value, TitleMeta meta) {
       final style = TextStyle(
         color: Colors.grey.shade400,
@@ -108,7 +121,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         fontSize: 12,
       );
       Widget text;
-      // Trừ 1 vì chúng ta đã thêm điểm bắt đầu ở index -1
       final index = value.toInt();
       if (index < 0 || index >= equityData.length) {
         text = Text('', style: style);
@@ -117,7 +129,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final date = DateTime.parse(dateString);
         text = Text(DateFormat('dd/MM').format(date), style: style);
       }
-      return SideTitleWidget(axisSide: meta.axisSide, space: 8.0, child: text);
+      return Padding(padding: const EdgeInsets.only(top: 8.0), child: text);
     }
 
     return Card(
@@ -135,7 +147,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: LineChart(
                 LineChartData(
-                  // *** FIX: Thêm TitlesData để hiển thị chỉ dẫn trục ***
                   titlesData: FlTitlesData(
                     show: true,
                     rightTitles: const AxisTitles(
@@ -148,8 +159,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 30,
-                        interval: (spots.length / 4)
-                            .ceilToDouble(), // Hiển thị khoảng 4-5 nhãn
+                        interval: (spots.length / 5).ceilToDouble().toDouble(),
                         getTitlesWidget: bottomTitleWidgets,
                       ),
                     ),
@@ -161,16 +171,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                   ),
-                  // *** FIX: Thêm GridData để có đường kẻ ngang ***
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
-                    getDrawingHorizontalLine: (value) {
-                      return FlLine(
-                        color: Colors.grey.withOpacity(0.2),
-                        strokeWidth: 1,
-                      );
-                    },
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: Colors.grey.withOpacity(0.2),
+                      strokeWidth: 1,
+                    ),
                   ),
                   borderData: FlBorderData(show: false),
                   lineBarsData: [
@@ -228,6 +235,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return FutureBuilder<Map<String, dynamic>>(
       future: _statsFuture,
       builder: (context, snapshot) {
+        Widget buildTimeFilter() {
+          final Map<String, String> timeRanges = {
+            'daily': 'Ngày',
+            'weekly': 'Tuần',
+            'monthly': 'Tháng',
+            'yearly': 'Năm',
+            'all': 'Tất cả',
+          };
+
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: timeRanges.entries.map((entry) {
+                final key = entry.key;
+                final value = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: ChoiceChip(
+                    label: Text(value),
+                    selected: _selectedTimeRange == key,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedTimeRange = key;
+                          _fetchData();
+                        });
+                      }
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          );
+        }
+
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -256,76 +298,79 @@ class _DashboardScreenState extends State<DashboardScreen> {
           symbol: '',
         );
 
-        if (totalTrades == 0) {
-          return const Center(
-            child: Text('Bạn chưa có giao dịch nào được đóng.'),
-          );
-        }
-
         return RefreshIndicator(
-          onRefresh: () async {
-            setState(() {
-              _statsFuture = _fetchUserStats();
-            });
-          },
+          onRefresh: () async => _fetchData(),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.8,
-                  children: [
-                    _buildStatCard(
-                      context,
-                      title: 'Tổng Lãi/Lỗ',
-                      value: currencyFormatter.format(totalPnl),
-                      icon: Icons.show_chart,
-                      valueColor: totalPnl >= 0
-                          ? Colors.greenAccent
-                          : Colors.redAccent,
-                    ),
-                    _buildStatCard(
-                      context,
-                      title: 'Tỷ lệ thắng',
-                      value: '${winrate.toStringAsFixed(1)}%',
-                      icon: Icons.pie_chart,
-                    ),
-                    _buildStatCard(
-                      context,
-                      title: 'Lợi nhuận TB',
-                      value: currencyFormatter.format(averageWin),
-                      icon: Icons.trending_up,
-                      valueColor: Colors.greenAccent,
-                    ),
-                    _buildStatCard(
-                      context,
-                      title: 'Thua lỗ TB',
-                      value: currencyFormatter.format(averageLoss),
-                      icon: Icons.trending_down,
-                      valueColor: Colors.redAccent,
-                    ),
-                  ],
-                ),
+                buildTimeFilter(),
                 const SizedBox(height: 24),
-
-                // Thay thế placeholder bằng biểu đồ thật
-                if (equityCurveData.isNotEmpty)
-                  _buildEquityCurveChart(equityCurveData)
-                else
-                  _buildChartPlaceholder(context, title: 'Biểu đồ tăng trưởng'),
-
-                const SizedBox(height: 16),
-                _buildChartPlaceholder(
-                  context,
-                  title: 'Hiệu suất theo chiến lược',
-                ),
+                if (totalTrades == 0)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 48.0),
+                      child: Text(
+                        'Không có dữ liệu trong khoảng thời gian này.',
+                      ),
+                    ),
+                  )
+                else ...[
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1.8,
+                    children: [
+                      _buildStatCard(
+                        context,
+                        title: 'Tổng Lãi/Lỗ',
+                        value: currencyFormatter.format(totalPnl),
+                        icon: Icons.show_chart,
+                        valueColor: totalPnl >= 0
+                            ? Colors.greenAccent
+                            : Colors.redAccent,
+                      ),
+                      _buildStatCard(
+                        context,
+                        title: 'Tỷ lệ thắng',
+                        value: '${winrate.toStringAsFixed(1)}%',
+                        icon: Icons.pie_chart,
+                      ),
+                      _buildStatCard(
+                        context,
+                        title: 'Lợi nhuận TB',
+                        value: currencyFormatter.format(averageWin),
+                        icon: Icons.trending_up,
+                        valueColor: Colors.greenAccent,
+                      ),
+                      _buildStatCard(
+                        context,
+                        title: 'Thua lỗ TB',
+                        value: currencyFormatter.format(averageLoss),
+                        icon: Icons.trending_down,
+                        valueColor: Colors.redAccent,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  if (equityCurveData.isNotEmpty)
+                    _buildEquityCurveChart(equityCurveData)
+                  else
+                    _buildChartPlaceholder(
+                      context,
+                      title: 'Biểu đồ tăng trưởng',
+                    ),
+                  const SizedBox(height: 16),
+                  _buildChartPlaceholder(
+                    context,
+                    title: 'Hiệu suất theo chiến lược',
+                  ),
+                ],
               ],
             ),
           ),

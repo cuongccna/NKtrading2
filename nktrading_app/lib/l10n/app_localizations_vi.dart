@@ -130,4 +130,22 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chartScreenshot => 'Ảnh chụp biểu đồ';
+
+  @override
+  String get filterTrades => 'Lọc Giao Dịch';
+
+  @override
+  String get dateRange => 'Khoảng Thời Gian';
+
+  @override
+  String get selectDate => 'Chọn ngày';
+
+  @override
+  String get all => 'Tất cả';
+
+  @override
+  String get apply => 'Áp dụng';
+
+  @override
+  String get reset => 'Đặt lại';
 }

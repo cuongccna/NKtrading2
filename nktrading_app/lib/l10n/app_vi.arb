@@ -40,5 +40,11 @@
     "emotionTagsLabel": "Thẻ cảm xúc",
     "noValue": "Không có",
     "chart": "Biểu đồ",
-    "chartScreenshot": "Ảnh chụp biểu đồ"
+    "chartScreenshot": "Ảnh chụp biểu đồ",
+    "filterTrades": "Lọc Giao Dịch",
+    "dateRange": "Khoảng Thời Gian",
+    "selectDate": "Chọn ngày",
+    "all": "Tất cả",
+    "apply": "Áp dụng",
+    "reset": "Đặt lại"
 }

@@ -1,5 +1,5 @@
 // File: supabase/functions/get-user-stats/index.ts
-// CẬP NHẬT: Thêm logic tính toán dữ liệu cho Biểu đồ Tăng trưởng (Equity Curve)
+// CẬP NHẬT: Thêm logic lọc theo khoảng thời gian (timeRange)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -27,26 +27,51 @@ serve(async (req) => {
       });
     }
 
-    // Lấy tất cả các giao dịch đã đóng, sắp xếp theo ngày tạo để tính toán biểu đồ
-    const { data: trades, error } = await supabaseClient
+    // *** NEW: Lấy tham số timeRange từ yêu cầu ***
+    const { timeRange } = await req.json();
+    let startDate = new Date(0); // Mặc định lấy từ đầu
+    const now = new Date();
+
+    switch (timeRange) {
+      case 'daily':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case 'weekly':
+        const dayOfWeek = now.getDay();
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+        break;
+      case 'monthly':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'yearly':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      // 'all' case sẽ không lọc theo ngày bắt đầu
+    }
+
+    let query = supabaseClient
       .from("trades")
       .select("entry_price, exit_price, quantity, direction, created_at")
       .eq("user_id", user.id)
-      .not("exit_price", "is", null)
-      .order("created_at", { ascending: true }); // Sắp xếp theo ngày
+      .not("exit_price", "is", null);
+      
+    // *** NEW: Áp dụng bộ lọc ngày nếu không phải 'all' ***
+    if (timeRange !== 'all') {
+        query = query.gte('created_at', startDate.toISOString());
+    }
+
+    const { data: trades, error } = await query.order("created_at", { ascending: true });
 
     if (error) {
       throw error;
     }
 
-    // --- Bắt đầu tính toán ---
+    // --- Logic tính toán giữ nguyên ---
     let totalPnl = 0;
     let totalWins = 0;
     let totalLosses = 0;
     let totalWinAmount = 0;
     let totalLossAmount = 0;
-    
-    // *** NEW: Logic tính toán Equity Curve ***
     const equityCurveData = [];
     let cumulativePnl = 0;
 
@@ -55,10 +80,9 @@ serve(async (req) => {
       const exitPrice = trade.exit_price;
       const quantity = trade.quantity;
       const isLong = trade.direction === "Long";
-      
       const pnl = (exitPrice - entryPrice) * quantity * (isLong ? 1 : -1);
+      
       totalPnl += pnl;
-
       if (pnl > 0) {
         totalWins++;
         totalWinAmount += pnl;
@@ -67,7 +91,6 @@ serve(async (req) => {
         totalLossAmount += Math.abs(pnl);
       }
       
-      // Thêm điểm dữ liệu mới vào biểu đồ
       cumulativePnl += pnl;
       equityCurveData.push({
         date: trade.created_at,
@@ -90,7 +113,7 @@ serve(async (req) => {
       totalWins,
       totalLosses,
       totalTrades,
-      equityCurve: equityCurveData, // *** NEW: Thêm dữ liệu biểu đồ vào kết quả trả về
+      equityCurve: equityCurveData,
     };
 
     return new Response(JSON.stringify(stats), {
