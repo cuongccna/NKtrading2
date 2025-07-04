@@ -17,16 +17,43 @@ serve(async (req) => {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
-    const { data: trades, error } = await supabaseClient
+    // Lấy tham số timeRange từ yêu cầu
+    const { timeRange } = await req.json();
+    let startDate = new Date(0);
+    const now = new Date();
+
+    switch (timeRange) {
+      case 'daily':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case 'weekly':
+        const dayOfWeek = now.getDay();
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+        break;
+      case 'monthly':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'yearly':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+    }
+
+    let query = supabaseClient
       .from("trades")
       .select("strategy, entry_price, exit_price, quantity, direction")
       .eq("user_id", user.id)
       .not("exit_price", "is", null)
       .not("strategy", "is", null);
 
+    // Áp dụng bộ lọc ngày nếu không phải 'all'
+    if (timeRange !== 'all') {
+        query = query.gte('created_at', startDate.toISOString());
+    }
+
+    const { data: trades, error } = await query;
+
     if (error) throw error;
 
-    // Sử dụng một Map để nhóm PnL theo chiến lược
     const performanceByStrategy = new Map<string, number>();
 
     for (const trade of trades) {
@@ -35,13 +62,11 @@ serve(async (req) => {
       performanceByStrategy.set(trade.strategy, currentPnl + pnl);
     }
 
-    // Chuyển đổi Map thành mảng để trả về
     const result = Array.from(performanceByStrategy, ([strategy, pnl]) => ({
       strategy,
       pnl,
     }));
     
-    // Sắp xếp kết quả để các chiến lược có PnL cao nhất hiển thị trước
     result.sort((a, b) => b.pnl - a.pnl);
 
     return new Response(JSON.stringify(result), {

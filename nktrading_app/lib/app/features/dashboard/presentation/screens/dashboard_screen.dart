@@ -14,9 +14,9 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   Future<Map<String, dynamic>>? _statsFuture;
+  Future<List<dynamic>>? _performanceChartFuture;
 
-  // State để quản lý bộ lọc thời gian
-  String _selectedTimeRange = 'all'; // Mặc định là 'all'
+  String _selectedTimeRange = 'all';
 
   @override
   void initState() {
@@ -24,26 +24,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _fetchData();
   }
 
-  // Hàm để gọi dữ liệu với bộ lọc hiện tại
   void _fetchData() {
     setState(() {
       _statsFuture = _fetchUserStats(_selectedTimeRange);
+      // *** FIX: Truyền bộ lọc thời gian cho cả hai hàm ***
+      _performanceChartFuture = _fetchPerformanceCharts(_selectedTimeRange);
     });
   }
 
   Future<Map<String, dynamic>> _fetchUserStats(String timeRange) async {
     try {
-      // Truyền timeRange vào body của request
       final result = await supabase.functions.invoke(
         'get-user-stats',
         body: {'timeRange': timeRange},
       );
-      if (result.data == null) {
-        throw 'Không nhận được dữ liệu từ server.';
-      }
+      if (result.data == null) throw 'Không nhận được dữ liệu từ server.';
       return result.data as Map<String, dynamic>;
     } catch (e) {
       throw 'Không thể tải dữ liệu thống kê: $e';
+    }
+  }
+
+  // *** FIX: Thêm tham số timeRange ***
+  Future<List<dynamic>> _fetchPerformanceCharts(String timeRange) async {
+    try {
+      final result = await supabase.functions.invoke(
+        'get-performance-charts',
+        body: {'timeRange': timeRange},
+      );
+      if (result.data == null) throw 'Không nhận được dữ liệu biểu đồ.';
+      return result.data as List<dynamic>;
+    } catch (e) {
+      throw 'Không thể tải dữ liệu biểu đồ hiệu suất: $e';
     }
   }
 
@@ -85,7 +97,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Widget để xây dựng biểu đồ Equity Curve
   Widget _buildEquityCurveChart(List<dynamic> equityData) {
     final List<FlSpot> spots = equityData.asMap().entries.map((entry) {
       final index = entry.key;
@@ -94,7 +105,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }).toList();
 
     if (spots.isNotEmpty) {
-      spots.insert(0, FlSpot(-1, 0));
+      spots.insert(0, const FlSpot(-1, 0));
     }
 
     Widget leftTitleWidgets(double value, TitleMeta meta) {
@@ -210,6 +221,92 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _buildStrategyPerformanceChart(List<dynamic> performanceData) {
+    final barGroups = performanceData.asMap().entries.map((entry) {
+      final index = entry.key;
+      final data = entry.value;
+      final pnl = (data['pnl'] as num).toDouble();
+
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: pnl,
+            color: pnl >= 0 ? Colors.greenAccent : Colors.redAccent,
+            width: 16,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      );
+    }).toList();
+
+    return Card(
+      child: Container(
+        height: 250,
+        padding: const EdgeInsets.fromLTRB(16, 24, 24, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Hiệu suất theo chiến lược",
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  barGroups: barGroups,
+                  titlesData: FlTitlesData(
+                    show: true,
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (double value, TitleMeta meta) {
+                          final index = value.toInt();
+                          if (index >= 0 && index < performanceData.length) {
+                            final strategy =
+                                performanceData[index]['strategy'] as String;
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: Text(
+                                strategy.length > 8
+                                    ? '${strategy.substring(0, 6)}...'
+                                    : strategy,
+                                style: TextStyle(
+                                  color: Colors.grey.shade400,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                        reservedSize: 32,
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildChartPlaceholder(BuildContext context, {required String title}) {
     return Card(
       child: Container(
@@ -232,9 +329,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _statsFuture,
-      builder: (context, snapshot) {
+    return FutureBuilder(
+      future: Future.wait([
+        if (_statsFuture != null) _statsFuture!,
+        if (_performanceChartFuture != null) _performanceChartFuture!,
+      ]),
+      builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         Widget buildTimeFilter() {
           final Map<String, String> timeRanges = {
             'daily': 'Ngày',
@@ -285,7 +385,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           return const Center(child: Text('Không có dữ liệu thống kê.'));
         }
 
-        final stats = snapshot.data!;
+        final stats = snapshot.data![0] as Map<String, dynamic>;
+        final performanceData = snapshot.data![1] as List<dynamic>;
+
         final totalPnl = (stats['totalPnl'] ?? 0.0).toDouble();
         final winrate = (stats['winrate'] ?? 0.0).toDouble();
         final averageWin = (stats['averageWin'] ?? 0.0).toDouble();
@@ -308,6 +410,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 buildTimeFilter(),
                 const SizedBox(height: 24),
+
                 if (totalTrades == 0)
                   const Center(
                     child: Padding(
@@ -358,6 +461,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
+
                   if (equityCurveData.isNotEmpty)
                     _buildEquityCurveChart(equityCurveData)
                   else
@@ -365,11 +469,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       context,
                       title: 'Biểu đồ tăng trưởng',
                     ),
+
                   const SizedBox(height: 16),
-                  _buildChartPlaceholder(
-                    context,
-                    title: 'Hiệu suất theo chiến lược',
-                  ),
+
+                  if (performanceData.isNotEmpty)
+                    _buildStrategyPerformanceChart(performanceData)
+                  else
+                    Card(
+                      child: Container(
+                        height: 250,
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Hiệu suất theo chiến lược",
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const Expanded(
+                              child: Center(
+                                child: Text("Chưa có dữ liệu chiến lược."),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ],
             ),
