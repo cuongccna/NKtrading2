@@ -12,6 +12,8 @@ class ApiConnectionsScreen extends StatefulWidget {
 
 class _ApiConnectionsScreenState extends State<ApiConnectionsScreen> {
   late Future<List<Map<String, dynamic>>> _keysFuture;
+  // State để quản lý trạng thái đang đồng bộ cho từng key
+  final Map<String, bool> _syncingStatus = {};
 
   @override
   void initState() {
@@ -45,6 +47,49 @@ class _ApiConnectionsScreenState extends State<ApiConnectionsScreen> {
     }
   }
 
+  // *** NEW: Hàm để kích hoạt đồng bộ hóa ***
+  Future<void> _syncTrades(String keyId, String exchange) async {
+    if (_syncingStatus[keyId] == true) return; // Tránh nhấn nhiều lần
+
+    setState(() => _syncingStatus[keyId] = true);
+
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('${l10n.syncing} ${exchange}...')));
+
+    try {
+      // Hiện tại chúng ta chỉ có function cho Binance
+      if (exchange.toLowerCase() != 'binance') {
+        throw 'Chức năng đồng bộ cho sàn $exchange chưa được hỗ trợ.';
+      }
+
+      final result = await supabase.functions.invoke('sync-binance-trades');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.data['message'] ?? 'Hoàn tất!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi đồng bộ: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _syncingStatus[keyId] = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -67,16 +112,38 @@ class _ApiConnectionsScreenState extends State<ApiConnectionsScreen> {
             itemCount: keys.length,
             itemBuilder: (context, index) {
               final key = keys[index];
+              final keyId = key['id'] as String;
+              final isSyncing = _syncingStatus[keyId] ?? false;
+
               return ListTile(
                 leading: const Icon(Icons.vpn_key_outlined),
                 title: Text(key['label'] ?? 'Unnamed Key'),
                 subtitle: Text(key['exchange']),
-                trailing: IconButton(
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.redAccent,
-                  ),
-                  onPressed: () => _deleteKey(key['id']),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Nút đồng bộ
+                    isSyncing
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.sync),
+                            onPressed: () =>
+                                _syncTrades(keyId, key['exchange']),
+                            tooltip: l10n.sync,
+                          ),
+                    // Nút xóa
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.redAccent,
+                      ),
+                      onPressed: () => _deleteKey(keyId),
+                    ),
+                  ],
                 ),
               );
             },

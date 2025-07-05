@@ -188,4 +188,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get save => 'Lưu';
+
+  @override
+  String get sync => 'Đồng bộ';
+
+  @override
+  String get syncing => 'Đang đồng bộ...';
 }
