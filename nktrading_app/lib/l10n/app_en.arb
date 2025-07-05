@@ -61,5 +61,12 @@
     "iUnderstand": "I have read and understand",
     "save": "Save",
     "sync": "Sync",
-    "syncing": "Syncing..."
+    "syncing": "Syncing...",
+    "apiKeys": "API Keys",
+    "wallets": "Wallets",
+    "addWallet": "Add Wallet",
+    "walletAddress": "Wallet Address",
+    "blockchain": "Blockchain",
+    "noWallets": "You have not added any wallets yet.",
+    "syncWallet": "Sync Wallet"
 }

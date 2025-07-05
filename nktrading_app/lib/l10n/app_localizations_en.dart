@@ -194,4 +194,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncing => 'Syncing...';
+
+  @override
+  String get apiKeys => 'API Keys';
+
+  @override
+  String get wallets => 'Wallets';
+
+  @override
+  String get addWallet => 'Add Wallet';
+
+  @override
+  String get walletAddress => 'Wallet Address';
+
+  @override
+  String get blockchain => 'Blockchain';
+
+  @override
+  String get noWallets => 'You have not added any wallets yet.';
+
+  @override
+  String get syncWallet => 'Sync Wallet';
 }

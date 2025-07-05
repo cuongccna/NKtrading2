@@ -469,6 +469,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Syncing...'**
   String get syncing;
+
+  /// No description provided for @apiKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'API Keys'**
+  String get apiKeys;
+
+  /// No description provided for @wallets.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallets'**
+  String get wallets;
+
+  /// No description provided for @addWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Wallet'**
+  String get addWallet;
+
+  /// No description provided for @walletAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet Address'**
+  String get walletAddress;
+
+  /// No description provided for @blockchain.
+  ///
+  /// In en, this message translates to:
+  /// **'Blockchain'**
+  String get blockchain;
+
+  /// No description provided for @noWallets.
+  ///
+  /// In en, this message translates to:
+  /// **'You have not added any wallets yet.'**
+  String get noWallets;
+
+  /// No description provided for @syncWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Wallet'**
+  String get syncWallet;
 }
 
 class _AppLocalizationsDelegate

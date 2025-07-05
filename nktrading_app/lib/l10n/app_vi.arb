@@ -61,5 +61,12 @@
     "iUnderstand": "Tôi đã đọc và hiểu",
     "save": "Lưu",
     "sync": "Đồng bộ",
-    "syncing": "Đang đồng bộ..."
+    "syncing": "Đang đồng bộ...",
+    "apiKeys": "API Sàn",
+    "wallets": "Địa chỉ Ví",
+    "addWallet": "Thêm Ví",
+    "walletAddress": "Địa chỉ Ví",
+    "blockchain": "Mạng lưới",
+    "noWallets": "Bạn chưa thêm địa chỉ ví nào.",
+    "syncWallet": "Đồng bộ Ví"
 }

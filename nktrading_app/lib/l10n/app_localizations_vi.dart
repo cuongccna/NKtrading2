@@ -194,4 +194,25 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get syncing => 'Đang đồng bộ...';
+
+  @override
+  String get apiKeys => 'API Sàn';
+
+  @override
+  String get wallets => 'Địa chỉ Ví';
+
+  @override
+  String get addWallet => 'Thêm Ví';
+
+  @override
+  String get walletAddress => 'Địa chỉ Ví';
+
+  @override
+  String get blockchain => 'Mạng lưới';
+
+  @override
+  String get noWallets => 'Bạn chưa thêm địa chỉ ví nào.';
+
+  @override
+  String get syncWallet => 'Đồng bộ Ví';
 }
