@@ -2,62 +2,71 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
+// *** FIX: Thêm lại dòng khai báo hằng số API URL ***
 const COVALENT_API_URL = "https://api.covalenthq.com/v1";
 
-// Hàm để phân tích một giao dịch và tìm ra lệnh swap
-function parseSwapTransaction(tx: any, userAddress: string) {
-  if (!tx.log_events || tx.log_events.length < 2) {
-    return null; // Cần ít nhất 2 sự kiện transfer
-  }
-
-  const transfers = tx.log_events.filter(
-    (log: any) => log.decoded?.name === "Transfer" && log.decoded.params
-  );
-
-  if (transfers.length < 2) {
+// Hàm để phân tích một giao dịch và tìm ra lệnh swap hoặc receive
+function parseTransaction(tx: any, userAddress: string) {
+  if (!tx.log_events || tx.log_events.length === 0) {
     return null;
   }
 
   const userAddressLower = userAddress.toLowerCase();
 
-  // Tìm token người dùng gửi đi (from = userAddress)
-  const sentEvent = transfers.find(
-    (log: any) => log.decoded.params[0].value.toLowerCase() === userAddressLower
+  // --- Ưu tiên phân tích SWAP trước ---
+  const transfers = tx.log_events.filter(
+    (log: any) => log.decoded?.name === "Transfer" && log.decoded.params
   );
 
-  // Tìm token người dùng nhận về (to = userAddress)
-  const receivedEvent = transfers.find(
-    (log: any) => log.decoded.params[1].value.toLowerCase() === userAddressLower
-  );
+  if (transfers.length >= 2) {
+    const sentEvent = transfers.find(log => log.decoded.params[0].value.toLowerCase() === userAddressLower);
+    const receivedEvent = transfers.find(log => log.decoded.params[1].value.toLowerCase() === userAddressLower);
 
-  if (!sentEvent || !receivedEvent) {
-    return null; // Không phải là một giao dịch swap đơn giản
+    if (sentEvent && receivedEvent) {
+      const amountOut = parseFloat(sentEvent.decoded.params[2].value) / (10 ** sentEvent.sender_contract_decimals);
+      const amountIn = parseFloat(receivedEvent.decoded.params[2].value) / (10 ** receivedEvent.sender_contract_decimals);
+      
+      if (amountIn > 0 && amountOut > 0) {
+        return {
+          symbol: `${receivedEvent.sender_contract_ticker_symbol}/${sentEvent.sender_contract_ticker_symbol}`,
+          direction: "Long",
+          entry_price: amountOut / amountIn,
+          exit_price: amountOut / amountIn,
+          quantity: amountIn,
+          notes: `Swap ${amountOut.toFixed(4)} ${sentEvent.sender_contract_ticker_symbol} for ${amountIn.toFixed(4)} ${receivedEvent.sender_contract_ticker_symbol}`,
+          tx_hash: tx.tx_hash,
+          created_at: tx.block_signed_at,
+        };
+      }
+    }
+  }
+  
+  // --- Nếu không phải SWAP, kiểm tra xem có phải là giao dịch RECEIVE đơn giản không ---
+  if (transfers.length === 1) {
+    const receiveEvent = transfers[0];
+    const params = receiveEvent.decoded.params;
+    
+    // Kiểm tra xem người dùng có phải là người nhận không
+    if (params && params[1] && params[1].value.toLowerCase() === userAddressLower) {
+      const amountIn = parseFloat(params[2].value) / (10 ** receiveEvent.sender_contract_decimals);
+      if (amountIn > 0) {
+         return {
+          symbol: `${receiveEvent.sender_contract_ticker_symbol}/USD`, // Giả định là mua bằng USD
+          direction: "Long",
+          entry_price: 0, // Không xác định được giá từ giao dịch Receive
+          exit_price: 0,
+          quantity: amountIn,
+          notes: `Received ${amountIn.toFixed(4)} ${receiveEvent.sender_contract_ticker_symbol}`,
+          tx_hash: tx.tx_hash,
+          created_at: tx.block_signed_at,
+        };
+      }
+    }
   }
 
-  const tokenOut = sentEvent.sender_name;
-  const tokenIn = receivedEvent.sender_name;
-  const symbolOut = sentEvent.sender_contract_ticker_symbol;
-  const symbolIn = receivedEvent.sender_contract_ticker_symbol;
-
-  const amountOut = parseFloat(sentEvent.decoded.params[2].value) / (10 ** sentEvent.sender_contract_decimals);
-  const amountIn = parseFloat(receivedEvent.decoded.params[2].value) / (10 ** receivedEvent.sender_contract_decimals);
-
-  if (amountIn === 0 || amountOut === 0) return null;
-
-  // Tính toán giá, coi như là giá của token mua vào (tokenIn) theo token bán ra (tokenOut)
-  const price = amountOut / amountIn;
-
-  return {
-    symbol: `${symbolIn}/${symbolOut}`,
-    direction: "Long", // Mua tokenIn
-    entry_price: price,
-    exit_price: price, // Đối với một swap, giá vào và ra là một
-    quantity: amountIn,
-    notes: `Swap ${amountOut.toFixed(4)} ${symbolOut} for ${amountIn.toFixed(4)} ${symbolIn}`,
-    tx_hash: tx.tx_hash,
-    created_at: tx.block_signed_at,
-  };
+  return null; // Không phải loại giao dịch hỗ trợ
 }
+
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -82,8 +91,7 @@ serve(async (req) => {
     const covalentApiKey = Deno.env.get("COVALENT_API_KEY");
     if (!covalentApiKey) throw new Error("Covalent API key not found in Vault.");
 
-    // Hiện tại chỉ hỗ trợ BNB Smart Chain
-    const chainId = "56"; 
+    const chainId = "56"; // Chỉ hỗ trợ BSC
     const url = `${COVALENT_API_URL}/${chainId}/address/${walletAddress}/transactions_v2/?key=${covalentApiKey}`;
 
     const response = await fetch(url);
@@ -92,11 +100,17 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    if (!data.data || !data.data.items) {
+       return new Response(JSON.stringify({ message: "No transactions found for this address." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
     const transactions = data.data.items;
     
     const tradesToInsert = [];
     for (const tx of transactions) {
-      const parsedTrade = parseSwapTransaction(tx, walletAddress);
+      const parsedTrade = parseTransaction(tx, walletAddress);
       if (parsedTrade) {
         tradesToInsert.push({
           user_id: user.id,
@@ -106,19 +120,18 @@ serve(async (req) => {
     }
 
     if (tradesToInsert.length === 0) {
-      return new Response(JSON.stringify({ message: "No new swap transactions found." }), {
+      return new Response(JSON.stringify({ message: "No new supported transactions found." }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Dùng upsert để thêm mới hoặc bỏ qua nếu đã tồn tại dựa trên tx_hash
     const { error: insertError } = await supabase
       .from("trades")
       .upsert(tradesToInsert, { onConflict: 'user_id, tx_hash' });
 
     if (insertError) throw insertError;
 
-    return new Response(JSON.stringify({ message: `Sync completed. ${tradesToInsert.length} new transactions found.` }), {
+    return new Response(JSON.stringify({ message: `Sync completed. ${tradesToInsert.length} new transactions processed.` }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
