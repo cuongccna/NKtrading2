@@ -379,6 +379,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reset'**
   String get reset;
+
+  /// No description provided for @connections.
+  ///
+  /// In en, this message translates to:
+  /// **'Connections'**
+  String get connections;
+
+  /// No description provided for @manageApiKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage API Keys'**
+  String get manageApiKeys;
+
+  /// No description provided for @addConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Connection'**
+  String get addConnection;
+
+  /// No description provided for @noConnections.
+  ///
+  /// In en, this message translates to:
+  /// **'You have not added any API connections yet.'**
+  String get noConnections;
+
+  /// No description provided for @addApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Add API Key'**
+  String get addApiKey;
+
+  /// No description provided for @exchange.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange'**
+  String get exchange;
+
+  /// No description provided for @label.
+  ///
+  /// In en, this message translates to:
+  /// **'Label (e.g., Main Account)'**
+  String get label;
+
+  /// No description provided for @apiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key'**
+  String get apiKey;
+
+  /// No description provided for @apiSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'API Secret'**
+  String get apiSecret;
+
+  /// No description provided for @importantNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Important Notice'**
+  String get importantNotice;
+
+  /// No description provided for @readOnlyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'For your security, please ensure the API key is set to \'Read-only\' and does not have trading or withdrawal permissions.'**
+  String get readOnlyWarning;
+
+  /// No description provided for @iUnderstand.
+  ///
+  /// In en, this message translates to:
+  /// **'I have read and understand'**
+  String get iUnderstand;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
 }
 
 class _AppLocalizationsDelegate

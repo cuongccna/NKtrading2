@@ -46,5 +46,20 @@
     "selectDate": "Select Date",
     "all": "All",
     "apply": "Apply",
-    "reset": "Reset"
+    "reset": "Reset",
+    "connections": "Connections",
+    "manageApiKeys": "Manage API Keys",
+    "addConnection": "Add Connection",
+    "noConnections": "You have not added any API connections yet.",
+    "addApiKey": "Add API Key",
+    "exchange": "Exchange",
+    "label": "Label (e.g., Main Account)",
+    "apiKey": "API Key",
+    "apiSecret": "API Secret",
+    "importantNotice": "Important Notice",
+    "readOnlyWarning": "For your security, please ensure the API key is set to 'Read-only' and does not have trading or withdrawal permissions.",
+    "iUnderstand": "I have read and understand",
+    "save": "Save",
+    "sync": "Sync",
+    "syncing": "Syncing..."
 }

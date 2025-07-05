@@ -46,5 +46,20 @@
     "selectDate": "Chọn ngày",
     "all": "Tất cả",
     "apply": "Áp dụng",
-    "reset": "Đặt lại"
+    "reset": "Đặt lại",
+    "connections": "Kết nối",
+    "manageApiKeys": "Quản lý API Key",
+    "addConnection": "Thêm Kết Nối",
+    "noConnections": "Bạn chưa thêm kết nối API nào.",
+    "addApiKey": "Thêm API Key",
+    "exchange": "Sàn giao dịch",
+    "label": "Tên gọi (VD: Tài khoản chính)",
+    "apiKey": "API Key",
+    "apiSecret": "API Secret",
+    "importantNotice": "Lưu ý Quan trọng",
+    "readOnlyWarning": "Vì lý do bảo mật, vui lòng đảm bảo API key được tạo ở chế độ 'Chỉ Đọc' và không có quyền Giao dịch hay Rút tiền.",
+    "iUnderstand": "Tôi đã đọc và hiểu",
+    "save": "Lưu",
+    "sync": "Đồng bộ",
+    "syncing": "Đang đồng bộ..."
 }

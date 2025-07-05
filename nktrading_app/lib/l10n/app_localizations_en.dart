@@ -148,4 +148,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reset => 'Reset';
+
+  @override
+  String get connections => 'Connections';
+
+  @override
+  String get manageApiKeys => 'Manage API Keys';
+
+  @override
+  String get addConnection => 'Add Connection';
+
+  @override
+  String get noConnections => 'You have not added any API connections yet.';
+
+  @override
+  String get addApiKey => 'Add API Key';
+
+  @override
+  String get exchange => 'Exchange';
+
+  @override
+  String get label => 'Label (e.g., Main Account)';
+
+  @override
+  String get apiKey => 'API Key';
+
+  @override
+  String get apiSecret => 'API Secret';
+
+  @override
+  String get importantNotice => 'Important Notice';
+
+  @override
+  String get readOnlyWarning =>
+      'For your security, please ensure the API key is set to \'Read-only\' and does not have trading or withdrawal permissions.';
+
+  @override
+  String get iUnderstand => 'I have read and understand';
+
+  @override
+  String get save => 'Save';
 }

@@ -148,4 +148,44 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get reset => 'Đặt lại';
+
+  @override
+  String get connections => 'Kết nối';
+
+  @override
+  String get manageApiKeys => 'Quản lý API Key';
+
+  @override
+  String get addConnection => 'Thêm Kết Nối';
+
+  @override
+  String get noConnections => 'Bạn chưa thêm kết nối API nào.';
+
+  @override
+  String get addApiKey => 'Thêm API Key';
+
+  @override
+  String get exchange => 'Sàn giao dịch';
+
+  @override
+  String get label => 'Tên gọi (VD: Tài khoản chính)';
+
+  @override
+  String get apiKey => 'API Key';
+
+  @override
+  String get apiSecret => 'API Secret';
+
+  @override
+  String get importantNotice => 'Lưu ý Quan trọng';
+
+  @override
+  String get readOnlyWarning =>
+      'Vì lý do bảo mật, vui lòng đảm bảo API key được tạo ở chế độ \'Chỉ Đọc\' và không có quyền Giao dịch hay Rút tiền.';
+
+  @override
+  String get iUnderstand => 'Tôi đã đọc và hiểu';
+
+  @override
+  String get save => 'Lưu';
 }
