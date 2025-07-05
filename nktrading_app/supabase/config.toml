@@ -53,3 +53,14 @@ entrypoint = "./functions/sync-onchain-trades/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/sync-onchain-trades/*.html" ]
+
+[functions.get-performance-patterns]
+enabled = true
+verify_jwt = true
+import_map = "./functions/get-performance-patterns/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/get-performance-patterns/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/get-performance-patterns/*.html" ]

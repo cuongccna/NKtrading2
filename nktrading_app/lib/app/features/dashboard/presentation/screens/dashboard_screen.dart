@@ -15,6 +15,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   Future<Map<String, dynamic>>? _statsFuture;
   Future<List<dynamic>>? _performanceChartFuture;
+  Future<Map<String, dynamic>>? _patternsFuture;
 
   String _selectedTimeRange = 'all';
 
@@ -27,8 +28,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _fetchData() {
     setState(() {
       _statsFuture = _fetchUserStats(_selectedTimeRange);
-      // *** FIX: Truyền bộ lọc thời gian cho cả hai hàm ***
       _performanceChartFuture = _fetchPerformanceCharts(_selectedTimeRange);
+      _patternsFuture = _fetchPerformancePatterns();
     });
   }
 
@@ -45,7 +46,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  // *** FIX: Thêm tham số timeRange ***
   Future<List<dynamic>> _fetchPerformanceCharts(String timeRange) async {
     try {
       final result = await supabase.functions.invoke(
@@ -56,6 +56,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return result.data as List<dynamic>;
     } catch (e) {
       throw 'Không thể tải dữ liệu biểu đồ hiệu suất: $e';
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchPerformancePatterns() async {
+    try {
+      final result = await supabase.functions.invoke(
+        'get-performance-patterns',
+      );
+      if (result.data == null) throw 'Không nhận được dữ liệu phân tích.';
+      return result.data as Map<String, dynamic>;
+    } catch (e) {
+      throw 'Không thể tải dữ liệu phân tích: $e';
     }
   }
 
@@ -140,6 +152,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final date = DateTime.parse(dateString);
         text = Text(DateFormat('dd/MM').format(date), style: style);
       }
+      // *** FIX: Bỏ đi SideTitleWidget và trả về trực tiếp widget Text ***
       return Padding(padding: const EdgeInsets.only(top: 8.0), child: text);
     }
 
@@ -276,6 +289,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           if (index >= 0 && index < performanceData.length) {
                             final strategy =
                                 performanceData[index]['strategy'] as String;
+                            // *** FIX: Bỏ đi SideTitleWidget ***
                             return Padding(
                               padding: const EdgeInsets.only(top: 4.0),
                               child: Text(
@@ -291,6 +305,95 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             );
                           }
                           return const Text('');
+                        },
+                        reservedSize: 32,
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDayOfWeekPerformanceChart(List<dynamic> performanceData) {
+    final barGroups = performanceData.map((data) {
+      final day = (data['day'] as num).toInt();
+      final pnl = (data['pnl'] as num).toDouble();
+      return BarChartGroupData(
+        x: day,
+        barRods: [
+          BarChartRodData(
+            toY: pnl,
+            color: pnl >= 0
+                ? Colors.greenAccent.withOpacity(0.7)
+                : Colors.redAccent.withOpacity(0.7),
+            width: 20,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      );
+    }).toList();
+
+    return Card(
+      child: Container(
+        height: 250,
+        padding: const EdgeInsets.fromLTRB(16, 24, 24, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Hiệu suất theo ngày",
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  barGroups: barGroups,
+                  titlesData: FlTitlesData(
+                    show: true,
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (double value, TitleMeta meta) {
+                          final days = [
+                            'CN',
+                            'T2',
+                            'T3',
+                            'T4',
+                            'T5',
+                            'T6',
+                            'T7',
+                          ];
+                          final text = Text(
+                            days[value.toInt()],
+                            style: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          );
+                          // *** FIX: Bỏ đi SideTitleWidget ***
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: text,
+                          );
                         },
                         reservedSize: 32,
                       ),
@@ -333,6 +436,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       future: Future.wait([
         if (_statsFuture != null) _statsFuture!,
         if (_performanceChartFuture != null) _performanceChartFuture!,
+        if (_patternsFuture != null) _patternsFuture!,
       ]),
       builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         Widget buildTimeFilter() {
@@ -387,6 +491,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         final stats = snapshot.data![0] as Map<String, dynamic>;
         final performanceData = snapshot.data![1] as List<dynamic>;
+        final patternsData = snapshot.data![2] as Map<String, dynamic>;
+        final byDayOfWeekData =
+            patternsData['byDayOfWeek'] as List<dynamic>? ?? [];
 
         final totalPnl = (stats['totalPnl'] ?? 0.0).toDouble();
         final winrate = (stats['winrate'] ?? 0.0).toDouble();
@@ -490,6 +597,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               child: Center(
                                 child: Text("Chưa có dữ liệu chiến lược."),
                               ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  const SizedBox(height: 16),
+                  if (byDayOfWeekData.isNotEmpty)
+                    _buildDayOfWeekPerformanceChart(byDayOfWeekData)
+                  else
+                    Card(
+                      child: Container(
+                        height: 250,
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Hiệu suất theo ngày",
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const Expanded(
+                              child: Center(child: Text("Chưa có dữ liệu.")),
                             ),
                           ],
                         ),
