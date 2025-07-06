@@ -215,4 +215,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncWallet => 'Sync Wallet';
+
+  @override
+  String get searchBySymbol => 'Search by symbol...';
 }

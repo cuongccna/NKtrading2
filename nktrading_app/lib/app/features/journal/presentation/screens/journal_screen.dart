@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../../../main.dart';
 import 'trade_detail_screen.dart'; // Import màn hình chi tiết
 import '../../data/models/trade_filter_model.dart'; // Import
+import '../../../../../l10n/app_localizations.dart';
 
 class JournalScreen extends StatefulWidget {
   final TradeFilterModel filter;
@@ -14,30 +16,39 @@ class JournalScreen extends StatefulWidget {
 class _JournalScreenState extends State<JournalScreen> {
   final List<Map<String, dynamic>> _trades = [];
   final _scrollController = ScrollController();
+  // *** NEW: Controller cho thanh tìm kiếm ***
+  final _searchController = TextEditingController();
 
-  bool _isLoading = true; // Loading cho lần tải đầu tiên
-  bool _isLoadingMore = false; // Loading cho các lần tải thêm
-  bool _hasMore = true; // Cờ để kiểm tra xem còn dữ liệu để tải không
+  bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
   int _currentPage = 0;
-  static const _pageSize = 20; // Số lượng item tải mỗi lần
+  static const _pageSize = 20;
+  String _searchTerm = '';
 
   @override
   void initState() {
     super.initState();
     _fetchInitialTrades();
     _scrollController.addListener(_onScroll);
+    // Lắng nghe thay đổi trong ô tìm kiếm
+    _searchController.addListener(() {
+      if (_searchTerm != _searchController.text) {
+        _searchTerm = _searchController.text;
+        _fetchInitialTrades(); // Tải lại dữ liệu từ đầu với từ khóa mới
+      }
+    });
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
-  // Hàm lắng nghe sự kiện cuộn
   void _onScroll() {
-    // Nếu người dùng cuộn đến gần cuối danh sách, và không đang tải, và vẫn còn dữ liệu
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 200 &&
         !_isLoadingMore &&
@@ -46,7 +57,6 @@ class _JournalScreenState extends State<JournalScreen> {
     }
   }
 
-  // Hàm tải dữ liệu lần đầu hoặc khi áp dụng bộ lọc mới
   Future<void> _fetchInitialTrades() async {
     setState(() {
       _isLoading = true;
@@ -62,22 +72,16 @@ class _JournalScreenState extends State<JournalScreen> {
     }
   }
 
-  // Hàm tải thêm dữ liệu cho các trang tiếp theo
   Future<void> _fetchMoreTrades() async {
     if (_isLoadingMore || !_hasMore) return;
 
-    setState(() {
-      _isLoadingMore = true;
-    });
+    setState(() => _isLoadingMore = true);
     await _fetchTrades();
     if (mounted) {
-      setState(() {
-        _isLoadingMore = false;
-      });
+      setState(() => _isLoadingMore = false);
     }
   }
 
-  // Hàm lấy dữ liệu chính, sử dụng .range() để phân trang
   Future<void> _fetchTrades() async {
     try {
       final from = _currentPage * _pageSize;
@@ -86,7 +90,7 @@ class _JournalScreenState extends State<JournalScreen> {
 
       var query = supabase.from('trades').select().eq('user_id', userId);
 
-      // Áp dụng các bộ lọc
+      // Áp dụng bộ lọc
       if (widget.filter.symbol != null) {
         query = query.eq('symbol', widget.filter.symbol!);
       }
@@ -104,6 +108,10 @@ class _JournalScreenState extends State<JournalScreen> {
           const Duration(days: 1),
         );
         query = query.lt('created_at', inclusiveEndDate.toIso8601String());
+      }
+      // *** NEW: Áp dụng tìm kiếm nhanh ***
+      if (_searchTerm.isNotEmpty) {
+        query = query.ilike('symbol', '%$_searchTerm%');
       }
 
       final data = await query
@@ -134,8 +142,43 @@ class _JournalScreenState extends State<JournalScreen> {
     }
   }
 
+  // *** NEW: Hàm tạo màu sắc ngẫu nhiên nhưng nhất quán cho chiến lược ***
+  Color _getColorForStrategy(String? strategy) {
+    if (strategy == null || strategy.isEmpty) {
+      return Colors.grey;
+    }
+    // Dùng hashCode để tạo ra một chỉ số màu nhất quán
+    final index = strategy.hashCode % Colors.primaries.length;
+    return Colors.primaries[index];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Column(
+      children: [
+        // *** NEW: Thanh tìm kiếm ***
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: l10n.searchBySymbol,
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+            ),
+          ),
+        ),
+        Expanded(child: _buildTradeList()),
+      ],
+    );
+  }
+
+  Widget _buildTradeList() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -146,11 +189,9 @@ class _JournalScreenState extends State<JournalScreen> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.only(bottom: 80),
-      // Thêm 1 item ở cuối để hiển thị vòng xoay "tải thêm"
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 80),
       itemCount: _trades.length + (_hasMore ? 1 : 0),
       itemBuilder: (context, index) {
-        // Nếu là item cuối cùng và còn dữ liệu để tải
         if (index == _trades.length) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 32.0),
@@ -161,13 +202,17 @@ class _JournalScreenState extends State<JournalScreen> {
         final trade = _trades[index];
         final isLong = trade['direction'] == 'Long';
         final entryPrice = (trade['entry_price'] ?? 0.0).toDouble();
-        final exitPrice = trade['exit_price'] != null
-            ? (trade['exit_price']).toDouble()
+        final pnl = trade['exit_price'] != null
+            ? ((trade['exit_price'] - entryPrice) *
+                      (trade['quantity'] ?? 0.0) *
+                      (isLong ? 1 : -1))
+                  .toDouble()
             : null;
-        final quantity = (trade['quantity'] ?? 0.0).toDouble();
-        final pnl = exitPrice != null
-            ? (exitPrice - entryPrice) * quantity * (isLong ? 1 : -1)
-            : null;
+
+        // *** NEW: Định dạng ngày giờ và lấy thông tin chiến lược ***
+        final createdAt = DateTime.parse(trade['created_at']);
+        final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(createdAt);
+        final strategy = trade['strategy'] as String?;
 
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -180,7 +225,46 @@ class _JournalScreenState extends State<JournalScreen> {
               trade['symbol'] ?? 'N/A',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Text('Giá vào: $entryPrice - SL: $quantity'),
+            // *** NEW: Cập nhật subtitle để hiển thị nhiều thông tin hơn ***
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Giá vào: $entryPrice - SL: ${trade['quantity']}'),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    if (strategy != null && strategy.isNotEmpty)
+                      Chip(
+                        label: Text(
+                          strategy,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                          ),
+                        ),
+                        backgroundColor: _getColorForStrategy(strategy),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 0,
+                        ),
+                        labelPadding: const EdgeInsets.symmetric(
+                          horizontal: 4.0,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    if (strategy != null && strategy.isNotEmpty)
+                      const SizedBox(width: 8),
+                    Text(
+                      formattedDate,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
             trailing: pnl != null
                 ? Text(
                     '${pnl > 0 ? '+' : ''}${pnl.toStringAsFixed(2)}',

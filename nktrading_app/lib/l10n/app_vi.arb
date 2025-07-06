@@ -68,5 +68,6 @@
     "walletAddress": "Địa chỉ Ví",
     "blockchain": "Mạng lưới",
     "noWallets": "Bạn chưa thêm địa chỉ ví nào.",
-    "syncWallet": "Đồng bộ Ví"
+    "syncWallet": "Đồng bộ Ví",
+    "searchBySymbol": "Tìm theo cặp giao dịch..."
 }

@@ -215,4 +215,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get syncWallet => 'Đồng bộ Ví';
+
+  @override
+  String get searchBySymbol => 'Tìm theo cặp giao dịch...';
 }

@@ -511,6 +511,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sync Wallet'**
   String get syncWallet;
+
+  /// No description provided for @searchBySymbol.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by symbol...'**
+  String get searchBySymbol;
 }
 
 class _AppLocalizationsDelegate
