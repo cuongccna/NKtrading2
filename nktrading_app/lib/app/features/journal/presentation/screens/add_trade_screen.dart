@@ -8,7 +8,10 @@ import '../../../../../main.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AddTradeScreen extends StatefulWidget {
-  const AddTradeScreen({super.key});
+  // *** NEW: Thêm tham số để nhận dữ liệu giao dịch cần sửa ***
+  final Map<String, dynamic>? initialTrade;
+  const AddTradeScreen({super.key, this.initialTrade});
+
   @override
   State<AddTradeScreen> createState() => _AddTradeScreenState();
 }
@@ -27,14 +30,33 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
   double _mindsetRating = 3.0;
 
   XFile? _beforeImageFile;
+  String? _existingImageUrl;
   bool _isLoading = false;
 
   List<String> _strategyOptions = [];
   List<String> _emotionTagOptions = [];
 
+  // *** NEW: Cờ để xác định chế độ (Thêm mới hay Sửa) ***
+  bool get _isEditMode => widget.initialTrade != null;
+
   @override
   void initState() {
     super.initState();
+    // Nếu là chế độ sửa, điền dữ liệu cũ vào form
+    if (_isEditMode) {
+      final trade = widget.initialTrade!;
+      _symbolController.text = trade['symbol'] ?? '';
+      _entryPriceController.text = trade['entry_price']?.toString() ?? '';
+      _exitPriceController.text = trade['exit_price']?.toString() ?? '';
+      _quantityController.text = trade['quantity']?.toString() ?? '';
+      _strategyController.text = trade['strategy'] ?? '';
+      _notesController.text = trade['notes'] ?? '';
+      _emotionTagsController.text =
+          (trade['emotion_tags'] as List<dynamic>?)?.join(', ') ?? '';
+      _direction = trade['direction'] ?? 'Long';
+      _mindsetRating = (trade['mindset_rating'] as int?)?.toDouble() ?? 3.0;
+      _existingImageUrl = trade['before_image_url'];
+    }
     _fetchAutocompleteOptions();
   }
 
@@ -121,58 +143,69 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
   }
 
   Future<void> _saveTrade() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
 
-      try {
-        final beforeImageUrl = await _uploadImage(_beforeImageFile);
-        final userId = supabase.auth.currentUser!.id;
-        final emotionTags = _emotionTagsController.text
-            .split(',')
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toList();
+    try {
+      final userId = supabase.auth.currentUser!.id;
+      final emotionTags = _emotionTagsController.text
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
 
-        await supabase.from('trades').insert({
-          'user_id': userId,
-          'symbol': _symbolController.text,
-          'direction': _direction,
-          'entry_price': double.parse(_entryPriceController.text),
-          'exit_price': _exitPriceController.text.isEmpty
-              ? null
-              : double.parse(_exitPriceController.text),
-          'quantity': double.parse(_quantityController.text),
-          'strategy': _strategyController.text.isEmpty
-              ? null
-              : _strategyController.text,
-          'notes': _notesController.text.isEmpty ? null : _notesController.text,
-          'mindset_rating': _mindsetRating.toInt(),
-          'emotion_tags': emotionTags,
-          'before_image_url': beforeImageUrl,
+      // Tải ảnh mới lên nếu có
+      final imageUrl = _beforeImageFile != null
+          ? await _uploadImage(_beforeImageFile)
+          : _existingImageUrl;
+
+      final payload = {
+        'user_id': userId,
+        'symbol': _symbolController.text,
+        'direction': _direction,
+        'entry_price': double.parse(_entryPriceController.text),
+        'exit_price': _exitPriceController.text.isEmpty
+            ? null
+            : double.parse(_exitPriceController.text),
+        'quantity': double.parse(_quantityController.text),
+        'strategy': _strategyController.text.isEmpty
+            ? null
+            : _strategyController.text,
+        'notes': _notesController.text.isEmpty ? null : _notesController.text,
+        'mindset_rating': _mindsetRating.toInt(),
+        'emotion_tags': emotionTags,
+        'before_image_url': imageUrl,
+      };
+
+      // *** NEW: Kiểm tra chế độ để gọi update hoặc insert ***
+      if (_isEditMode) {
+        await supabase.from('trades').update(payload).match({
+          'id': widget.initialTrade!['id'],
         });
+      } else {
+        await supabase.from('trades').insert(payload);
+      }
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đã lưu giao dịch thành công!')),
-          );
-          Navigator.of(context).pop(true);
-        }
-      } catch (e) {
-        if (mounted)
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi lưu giao dịch: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã lưu giao dịch thành công!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi lưu giao dịch: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -181,7 +214,8 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.addTrade)),
+      // *** NEW: Thay đổi tiêu đề dựa trên chế độ ***
+      appBar: AppBar(title: Text(_isEditMode ? l10n.editTrade : l10n.addTrade)),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(

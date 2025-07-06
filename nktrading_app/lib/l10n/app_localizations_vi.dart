@@ -263,4 +263,23 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get averagePnl => 'Lãi/Lỗ Trung bình';
+
+  @override
+  String get editTrade => 'Sửa Giao dịch';
+
+  @override
+  String get deleteTrade => 'Xóa Giao dịch';
+
+  @override
+  String get confirmDeletion => 'Xác nhận Xóa';
+
+  @override
+  String get deleteConfirmation =>
+      'Bạn có chắc chắn muốn xóa vĩnh viễn giao dịch này không?';
+
+  @override
+  String get cancel => 'Hủy';
+
+  @override
+  String get delete => 'Xóa';
 }

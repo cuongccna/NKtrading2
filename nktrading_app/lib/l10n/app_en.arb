@@ -84,5 +84,11 @@
     "performanceByEmotion": "Performance by Emotion",
     "rating": "Rating",
     "tag": "Tag",
-    "averagePnl": "Average PnL"
+    "averagePnl": "Average PnL",
+    "editTrade": "Edit Trade",
+    "deleteTrade": "Delete Trade",
+    "confirmDeletion": "Confirm Deletion",
+    "deleteConfirmation": "Are you sure you want to permanently delete this trade?",
+    "cancel": "Cancel",
+    "delete": "Delete"
 }

@@ -263,4 +263,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get averagePnl => 'Average PnL';
+
+  @override
+  String get editTrade => 'Edit Trade';
+
+  @override
+  String get deleteTrade => 'Delete Trade';
+
+  @override
+  String get confirmDeletion => 'Confirm Deletion';
+
+  @override
+  String get deleteConfirmation =>
+      'Are you sure you want to permanently delete this trade?';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get delete => 'Delete';
 }

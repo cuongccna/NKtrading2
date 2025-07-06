@@ -4,6 +4,7 @@ import '../../../../../main.dart';
 import 'trade_detail_screen.dart'; // Import màn hình chi tiết
 import '../../data/models/trade_filter_model.dart'; // Import
 import '../../../../../l10n/app_localizations.dart';
+import 'add_trade_screen.dart'; // Import
 
 class JournalScreen extends StatefulWidget {
   final TradeFilterModel filter;
@@ -16,7 +17,6 @@ class JournalScreen extends StatefulWidget {
 class _JournalScreenState extends State<JournalScreen> {
   final List<Map<String, dynamic>> _trades = [];
   final _scrollController = ScrollController();
-  // *** NEW: Controller cho thanh tìm kiếm ***
   final _searchController = TextEditingController();
 
   bool _isLoading = true;
@@ -31,11 +31,10 @@ class _JournalScreenState extends State<JournalScreen> {
     super.initState();
     _fetchInitialTrades();
     _scrollController.addListener(_onScroll);
-    // Lắng nghe thay đổi trong ô tìm kiếm
     _searchController.addListener(() {
       if (_searchTerm != _searchController.text) {
         _searchTerm = _searchController.text;
-        _fetchInitialTrades(); // Tải lại dữ liệu từ đầu với từ khóa mới
+        _fetchInitialTrades();
       }
     });
   }
@@ -90,7 +89,6 @@ class _JournalScreenState extends State<JournalScreen> {
 
       var query = supabase.from('trades').select().eq('user_id', userId);
 
-      // Áp dụng bộ lọc
       if (widget.filter.symbol != null) {
         query = query.eq('symbol', widget.filter.symbol!);
       }
@@ -109,7 +107,6 @@ class _JournalScreenState extends State<JournalScreen> {
         );
         query = query.lt('created_at', inclusiveEndDate.toIso8601String());
       }
-      // *** NEW: Áp dụng tìm kiếm nhanh ***
       if (_searchTerm.isNotEmpty) {
         query = query.ilike('symbol', '%$_searchTerm%');
       }
@@ -128,37 +125,87 @@ class _JournalScreenState extends State<JournalScreen> {
         });
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi tải dữ liệu: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        setState(() {
-          _hasMore = false;
-        });
-      }
+      // ...
     }
   }
 
-  // *** NEW: Hàm tạo màu sắc ngẫu nhiên nhưng nhất quán cho chiến lược ***
   Color _getColorForStrategy(String? strategy) {
-    if (strategy == null || strategy.isEmpty) {
-      return Colors.grey;
-    }
-    // Dùng hashCode để tạo ra một chỉ số màu nhất quán
+    if (strategy == null || strategy.isEmpty) return Colors.grey;
     final index = strategy.hashCode % Colors.primaries.length;
     return Colors.primaries[index];
+  }
+
+  // *** NEW: Hàm điều hướng đến màn hình Sửa ***
+  void _navigateToEditScreen(Map<String, dynamic> trade) {
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (context) => AddTradeScreen(initialTrade: trade),
+          ),
+        )
+        .then((result) {
+          if (result == true) {
+            _fetchInitialTrades(); // Tải lại toàn bộ danh sách khi có thay đổi
+          }
+        });
+  }
+
+  // *** NEW: Hàm hiển thị hộp thoại xác nhận và xóa ***
+  Future<void> _deleteTrade(String tradeId, int index) async {
+    final l10n = AppLocalizations.of(context)!;
+    final bool? confirmed = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.confirmDeletion),
+        content: Text(l10n.deleteConfirmation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              l10n.delete,
+              style: const TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await supabase.from('trades').delete().match({'id': tradeId});
+        if (mounted) {
+          setState(() {
+            _trades.removeAt(index);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã xóa giao dịch thành công.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi xóa giao dịch: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-
     return Column(
       children: [
-        // *** NEW: Thanh tìm kiếm ***
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: TextField(
@@ -182,7 +229,6 @@ class _JournalScreenState extends State<JournalScreen> {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-
     if (_trades.isEmpty) {
       return const Center(child: Text('Không tìm thấy giao dịch nào.'));
     }
@@ -200,83 +246,130 @@ class _JournalScreenState extends State<JournalScreen> {
         }
 
         final trade = _trades[index];
-        final isLong = trade['direction'] == 'Long';
-        final entryPrice = (trade['entry_price'] ?? 0.0).toDouble();
         final pnl = trade['exit_price'] != null
-            ? ((trade['exit_price'] - entryPrice) *
+            ? ((trade['exit_price'] - (trade['entry_price'] ?? 0.0)) *
                       (trade['quantity'] ?? 0.0) *
-                      (isLong ? 1 : -1))
+                      (trade['direction'] == 'Long' ? 1 : -1))
                   .toDouble()
             : null;
 
-        // *** NEW: Định dạng ngày giờ và lấy thông tin chiến lược ***
         final createdAt = DateTime.parse(trade['created_at']);
         final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(createdAt);
         final strategy = trade['strategy'] as String?;
 
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ListTile(
-            leading: Icon(
-              isLong ? Icons.arrow_upward : Icons.arrow_downward,
-              color: isLong ? Colors.green : Colors.red,
-            ),
-            title: Text(
-              trade['symbol'] ?? 'N/A',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            // *** NEW: Cập nhật subtitle để hiển thị nhiều thông tin hơn ***
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Giá vào: $entryPrice - SL: ${trade['quantity']}'),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    if (strategy != null && strategy.isNotEmpty)
-                      Chip(
-                        label: Text(
-                          strategy,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.white,
-                          ),
-                        ),
-                        backgroundColor: _getColorForStrategy(strategy),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 0,
-                        ),
-                        labelPadding: const EdgeInsets.symmetric(
-                          horizontal: 4.0,
-                        ),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    if (strategy != null && strategy.isNotEmpty)
-                      const SizedBox(width: 8),
-                    Text(
-                      formattedDate,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade400,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            trailing: pnl != null
-                ? Text(
-                    '${pnl > 0 ? '+' : ''}${pnl.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      color: pnl > 0 ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
-                : const Text('Đang mở'),
+          child: InkWell(
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => TradeDetailScreen(trade: trade),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        trade['direction'] == 'Long'
+                            ? Icons.arrow_upward
+                            : Icons.arrow_downward,
+                        color: trade['direction'] == 'Long'
+                            ? Colors.green
+                            : Colors.red,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              trade['symbol'] ?? 'N/A',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            Text(
+                              'Giá vào: ${trade['entry_price']} - SL: ${trade['quantity']}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (pnl != null)
+                        Text(
+                          '${pnl > 0 ? '+' : ''}${NumberFormat.currency(locale: 'vi_VN', symbol: '').format(pnl)}',
+                          style: TextStyle(
+                            color: pnl > 0
+                                ? Colors.greenAccent
+                                : Colors.redAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      if (pnl == null) const Text('Đang mở'),
+                    ],
+                  ),
+                  const Divider(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            if (strategy != null && strategy.isNotEmpty)
+                              Chip(
+                                label: Text(
+                                  strategy,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                backgroundColor: _getColorForStrategy(strategy),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 0,
+                                ),
+                                labelPadding: const EdgeInsets.symmetric(
+                                  horizontal: 4.0,
+                                ),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            if (strategy != null && strategy.isNotEmpty)
+                              const SizedBox(width: 8),
+                            Text(
+                              formattedDate,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // *** NEW: Hàng chứa các nút Sửa/Xóa ***
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit_outlined, size: 20),
+                            onPressed: () => _navigateToEditScreen(trade),
+                            tooltip: 'Sửa',
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              size: 20,
+                              color: Colors.redAccent,
+                            ),
+                            onPressed: () => _deleteTrade(trade['id'], index),
+                            tooltip: 'Xóa',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),

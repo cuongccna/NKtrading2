@@ -84,5 +84,11 @@
     "performanceByEmotion": "Hiệu suất theo Thẻ cảm xúc",
     "rating": "Điểm",
     "tag": "Thẻ",
-    "averagePnl": "Lãi/Lỗ Trung bình"
+    "averagePnl": "Lãi/Lỗ Trung bình",
+    "editTrade": "Sửa Giao dịch",
+    "deleteTrade": "Xóa Giao dịch",
+    "confirmDeletion": "Xác nhận Xóa",
+    "deleteConfirmation": "Bạn có chắc chắn muốn xóa vĩnh viễn giao dịch này không?",
+    "cancel": "Hủy",
+    "delete": "Xóa"
 }

@@ -607,6 +607,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Average PnL'**
   String get averagePnl;
+
+  /// No description provided for @editTrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Trade'**
+  String get editTrade;
+
+  /// No description provided for @deleteTrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Trade'**
+  String get deleteTrade;
+
+  /// No description provided for @confirmDeletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Deletion'**
+  String get confirmDeletion;
+
+  /// No description provided for @deleteConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to permanently delete this trade?'**
+  String get deleteConfirmation;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
 }
 
 class _AppLocalizationsDelegate

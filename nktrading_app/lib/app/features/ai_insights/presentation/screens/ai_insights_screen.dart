@@ -221,7 +221,6 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
     required List<dynamic> data,
     required String header1,
   }) {
-    final l10n = AppLocalizations.of(context)!;
     final currencyFormatter = NumberFormat.currency(
       locale: 'vi_VN',
       symbol: '',
