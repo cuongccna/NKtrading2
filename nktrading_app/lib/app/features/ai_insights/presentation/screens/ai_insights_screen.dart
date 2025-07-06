@@ -21,7 +21,6 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
 
   Future<Map<String, dynamic>> _fetchInsights() async {
     try {
-      // Gọi đồng thời cả hai function để tối ưu thời gian
       final results = await Future.wait([
         supabase.functions.invoke('get-winning-patterns'),
         supabase.functions.invoke('get-psychological-impact'),
@@ -30,7 +29,6 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
       final patternsData = results[0].data as Map<String, dynamic>? ?? {};
       final psychologyData = results[1].data as Map<String, dynamic>? ?? {};
 
-      // Gộp kết quả từ hai function vào một map duy nhất
       return {...patternsData, ...psychologyData};
     } catch (e) {
       throw 'Không thể tải dữ liệu phân tích: $e';
@@ -101,11 +99,15 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
                 ),
               const SizedBox(height: 16),
               if (byMindset.isNotEmpty || byEmotionTag.isNotEmpty)
-                Text(
-                  l10n.psychologicalAnalysis,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text(
+                    l10n.psychologicalAnalysis,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              const SizedBox(height: 16),
               if (byMindset.isNotEmpty)
                 _buildPsychologyTable(
                   context,
@@ -153,17 +155,26 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
           children: [
             Row(
               children: [
-                Icon(icon, color: Colors.amber),
-                const SizedBox(width: 8),
+                Icon(icon, color: Colors.amber.shade300, size: 28),
+                const SizedBox(width: 12),
                 Text(title, style: Theme.of(context).textTheme.titleLarge),
               ],
             ),
             const SizedBox(height: 12),
+            // *** FIX: Thêm điểm nhấn màu sắc cho nội dung chính ***
             Text(
               content,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.amber.shade200,
+                shadows: [
+                  Shadow(
+                    blurRadius: 10.0,
+                    color: Colors.amber.withOpacity(0.3),
+                    offset: const Offset(2.0, 2.0),
+                  ),
+                ],
+              ),
             ),
             const Divider(height: 24),
             Row(
@@ -224,38 +235,41 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
           children: [
             Text(title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            DataTable(
-              columnSpacing: 24,
-              columns: [
-                DataColumn(label: Text(header1)),
-                DataColumn(label: Text(l10n.averagePnl), numeric: true),
-                DataColumn(label: Text(l10n.tradeCount), numeric: true),
-              ],
-              rows: data.map((item) {
+            // *** FIX: Dùng ListView thay vì DataTable để linh hoạt hơn ***
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: data.length,
+              separatorBuilder: (context, index) =>
+                  const Divider(height: 1, color: Colors.white12),
+              itemBuilder: (context, index) {
+                final item = data[index];
                 final pnl = (item['averagePnl'] as num).toDouble();
                 final isProfit = pnl >= 0;
-                return DataRow(
-                  cells: [
-                    DataCell(
-                      Text(
-                        item['key'].toString(),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataCell(
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 0),
+                  title: Text(
+                    item['key'].toString(),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       Text(
                         currencyFormatter.format(pnl),
                         style: TextStyle(
                           color: isProfit
                               ? Colors.greenAccent
                               : Colors.redAccent,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                    DataCell(Text(item['tradeCount'].toString())),
-                  ],
+                      const SizedBox(width: 24),
+                      Text('${item['tradeCount']} lệnh'),
+                    ],
+                  ),
                 );
-              }).toList(),
+              },
             ),
           ],
         ),
