@@ -529,6 +529,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Top 10 Losing Trades'**
   String get top10LosingTrades;
+
+  /// No description provided for @aiInsights.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Insights'**
+  String get aiInsights;
+
+  /// No description provided for @bestPerformingStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'Best Performing Strategy'**
+  String get bestPerformingStrategy;
+
+  /// No description provided for @bestPerformingDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Best Performing Day'**
+  String get bestPerformingDay;
+
+  /// No description provided for @bestPerformingSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Best Trading Session'**
+  String get bestPerformingSession;
+
+  /// No description provided for @pnl.
+  ///
+  /// In en, this message translates to:
+  /// **'PnL'**
+  String get pnl;
+
+  /// No description provided for @winrate.
+  ///
+  /// In en, this message translates to:
+  /// **'Winrate'**
+  String get winrate;
+
+  /// No description provided for @tradeCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Trade Count'**
+  String get tradeCount;
+
+  /// No description provided for @psychologicalAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Psychological Analysis'**
+  String get psychologicalAnalysis;
+
+  /// No description provided for @performanceByMindset.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance by Mindset'**
+  String get performanceByMindset;
+
+  /// No description provided for @performanceByEmotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance by Emotion'**
+  String get performanceByEmotion;
+
+  /// No description provided for @rating.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating'**
+  String get rating;
+
+  /// No description provided for @tag.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag'**
+  String get tag;
+
+  /// No description provided for @averagePnl.
+  ///
+  /// In en, this message translates to:
+  /// **'Average PnL'**
+  String get averagePnl;
 }
 
 class _AppLocalizationsDelegate

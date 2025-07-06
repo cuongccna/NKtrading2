@@ -71,5 +71,18 @@
     "syncWallet": "Sync Wallet",
     "searchBySymbol": "Search by symbol...",
     "top10WinningTrades": "Top 10 Winning Trades",
-    "top10LosingTrades": "Top 10 Losing Trades"
+    "top10LosingTrades": "Top 10 Losing Trades",
+    "aiInsights": "AI Insights",
+    "bestPerformingStrategy": "Best Performing Strategy",
+    "bestPerformingDay": "Best Performing Day",
+    "bestPerformingSession": "Best Trading Session",
+    "pnl": "PnL",
+    "winrate": "Winrate",
+    "tradeCount": "Trade Count",
+    "psychologicalAnalysis": "Psychological Analysis",
+    "performanceByMindset": "Performance by Mindset",
+    "performanceByEmotion": "Performance by Emotion",
+    "rating": "Rating",
+    "tag": "Tag",
+    "averagePnl": "Average PnL"
 }

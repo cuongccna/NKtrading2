@@ -10,6 +10,7 @@ import '../../../features/journal/presentation/screens/add_trade_screen.dart'; /
 import '../../../features/journal/presentation/widgets/filter_dialog.dart';
 import '../../../features/journal/data/models/trade_filter_model.dart';
 import '../../../features/connections/presentation/screens/api_connections_screen.dart'; // Import
+import '../../../features/ai_insights/presentation/screens/ai_insights_screen.dart'; // Import
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -71,14 +72,12 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final titles = [l10n.journal, l10n.dashboard];
-
-    // Tạo danh sách widget trong build method để đảm bảo nó luôn được cập nhật
+    // *** NEW: Thêm title và widget cho tab mới ***
+    final titles = [l10n.journal, l10n.dashboard, l10n.aiInsights];
     final List<Widget> widgetOptions = <Widget>[
-      // Truyền key và filter vào JournalScreen
-      // Khi key thay đổi, một instance mới của JournalScreen sẽ được tạo
       JournalScreen(key: _journalScreenKey, filter: _currentFilter),
       const DashboardScreen(),
+      const AiInsightsScreen(), // Thêm màn hình mới
     ];
 
     return Scaffold(
@@ -140,6 +139,12 @@ class _MainScreenState extends State<MainScreen> {
             icon: const Icon(Icons.dashboard_outlined),
             activeIcon: const Icon(Icons.dashboard),
             label: l10n.dashboard,
+          ),
+          // *** NEW: Thêm item cho tab mới ***
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.auto_awesome_outlined),
+            activeIcon: const Icon(Icons.auto_awesome),
+            label: l10n.aiInsights,
           ),
         ],
         currentIndex: _selectedIndex,

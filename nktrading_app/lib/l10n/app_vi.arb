@@ -71,5 +71,18 @@
     "syncWallet": "Đồng bộ Ví",
     "searchBySymbol": "Tìm theo cặp giao dịch...",
     "top10WinningTrades": "Top 10 Giao dịch Lãi nhất",
-    "top10LosingTrades": "Top 10 Giao dịch Lỗ nhất"
+    "top10LosingTrades": "Top 10 Giao dịch Lỗ nhất",
+    "aiInsights": "Phân tích AI",
+    "bestPerformingStrategy": "Chiến lược Hiệu quả nhất",
+    "bestPerformingDay": "Ngày Giao dịch Tốt nhất",
+    "bestPerformingSession": "Phiên Giao dịch Tốt nhất",
+    "pnl": "Lãi/Lỗ",
+    "winrate": "Tỷ lệ thắng",
+    "tradeCount": "Số lệnh",
+    "psychologicalAnalysis": "Phân tích Tâm lý",
+    "performanceByMindset": "Hiệu suất theo Điểm tâm lý",
+    "performanceByEmotion": "Hiệu suất theo Thẻ cảm xúc",
+    "rating": "Điểm",
+    "tag": "Thẻ",
+    "averagePnl": "Lãi/Lỗ Trung bình"
 }

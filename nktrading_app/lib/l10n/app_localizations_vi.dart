@@ -224,4 +224,43 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get top10LosingTrades => 'Top 10 Giao dịch Lỗ nhất';
+
+  @override
+  String get aiInsights => 'Phân tích AI';
+
+  @override
+  String get bestPerformingStrategy => 'Chiến lược Hiệu quả nhất';
+
+  @override
+  String get bestPerformingDay => 'Ngày Giao dịch Tốt nhất';
+
+  @override
+  String get bestPerformingSession => 'Phiên Giao dịch Tốt nhất';
+
+  @override
+  String get pnl => 'Lãi/Lỗ';
+
+  @override
+  String get winrate => 'Tỷ lệ thắng';
+
+  @override
+  String get tradeCount => 'Số lệnh';
+
+  @override
+  String get psychologicalAnalysis => 'Phân tích Tâm lý';
+
+  @override
+  String get performanceByMindset => 'Hiệu suất theo Điểm tâm lý';
+
+  @override
+  String get performanceByEmotion => 'Hiệu suất theo Thẻ cảm xúc';
+
+  @override
+  String get rating => 'Điểm';
+
+  @override
+  String get tag => 'Thẻ';
+
+  @override
+  String get averagePnl => 'Lãi/Lỗ Trung bình';
 }

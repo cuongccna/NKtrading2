@@ -224,4 +224,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get top10LosingTrades => 'Top 10 Losing Trades';
+
+  @override
+  String get aiInsights => 'AI Insights';
+
+  @override
+  String get bestPerformingStrategy => 'Best Performing Strategy';
+
+  @override
+  String get bestPerformingDay => 'Best Performing Day';
+
+  @override
+  String get bestPerformingSession => 'Best Trading Session';
+
+  @override
+  String get pnl => 'PnL';
+
+  @override
+  String get winrate => 'Winrate';
+
+  @override
+  String get tradeCount => 'Trade Count';
+
+  @override
+  String get psychologicalAnalysis => 'Psychological Analysis';
+
+  @override
+  String get performanceByMindset => 'Performance by Mindset';
+
+  @override
+  String get performanceByEmotion => 'Performance by Emotion';
+
+  @override
+  String get rating => 'Rating';
+
+  @override
+  String get tag => 'Tag';
+
+  @override
+  String get averagePnl => 'Average PnL';
 }
