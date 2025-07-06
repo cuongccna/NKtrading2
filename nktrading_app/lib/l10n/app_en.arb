@@ -69,5 +69,7 @@
     "blockchain": "Blockchain",
     "noWallets": "You have not added any wallets yet.",
     "syncWallet": "Sync Wallet",
-    "searchBySymbol": "Search by symbol..."
+    "searchBySymbol": "Search by symbol...",
+    "top10WinningTrades": "Top 10 Winning Trades",
+    "top10LosingTrades": "Top 10 Losing Trades"
 }

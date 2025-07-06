@@ -218,4 +218,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchBySymbol => 'Search by symbol...';
+
+  @override
+  String get top10WinningTrades => 'Top 10 Winning Trades';
+
+  @override
+  String get top10LosingTrades => 'Top 10 Losing Trades';
 }

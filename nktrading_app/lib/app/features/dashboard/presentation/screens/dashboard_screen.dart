@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../../main.dart';
 import 'package:fl_chart/fl_chart.dart'; // Import thư viện biểu đồ
+import '../../../../../l10n/app_localizations.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -16,6 +17,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<Map<String, dynamic>>? _statsFuture;
   Future<List<dynamic>>? _performanceChartFuture;
   Future<Map<String, dynamic>>? _patternsFuture;
+  Future<Map<String, dynamic>>? _topTradesFuture;
 
   String _selectedTimeRange = 'all';
 
@@ -30,6 +32,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _statsFuture = _fetchUserStats(_selectedTimeRange);
       _performanceChartFuture = _fetchPerformanceCharts(_selectedTimeRange);
       _patternsFuture = _fetchPerformancePatterns();
+      _topTradesFuture = _fetchTopTrades();
     });
   }
 
@@ -71,6 +74,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<Map<String, dynamic>> _fetchTopTrades() async {
+    try {
+      final result = await supabase.functions.invoke('get-top-trades');
+      if (result.data == null) throw 'Không nhận được dữ liệu top trades.';
+      return result.data as Map<String, dynamic>;
+    } catch (e) {
+      throw 'Không thể tải dữ liệu top trades: $e';
+    }
+  }
+
   Widget _buildStatCard(
     BuildContext context, {
     required String title,
@@ -105,6 +118,73 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showTopTradesDialog(Map<String, dynamic> topTradesData) {
+    final l10n = AppLocalizations.of(context)!;
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: '',
+    );
+    final topWinners = (topTradesData['topWinners'] as List<dynamic>?) ?? [];
+    final topLosers = (topTradesData['topLosers'] as List<dynamic>?) ?? [];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Thống kê Lãi/Lỗ'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.top10WinningTrades,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                if (topWinners.isEmpty)
+                  const ListTile(title: Text('Không có dữ liệu.'))
+                else
+                  ...topWinners.map(
+                    (trade) => ListTile(
+                      title: Text(trade['symbol']),
+                      trailing: Text(
+                        '+${currencyFormatter.format(trade['pnl'])}',
+                        style: const TextStyle(color: Colors.greenAccent),
+                      ),
+                    ),
+                  ),
+                const Divider(height: 32),
+                Text(
+                  l10n.top10LosingTrades,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                if (topLosers.isEmpty)
+                  const ListTile(title: Text('Không có dữ liệu.'))
+                else
+                  ...topLosers.map(
+                    (trade) => ListTile(
+                      title: Text(trade['symbol']),
+                      trailing: Text(
+                        currencyFormatter.format(trade['pnl']),
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đóng'),
+          ),
+        ],
       ),
     );
   }
@@ -152,7 +232,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final date = DateTime.parse(dateString);
         text = Text(DateFormat('dd/MM').format(date), style: style);
       }
-      // *** FIX: Bỏ đi SideTitleWidget và trả về trực tiếp widget Text ***
       return Padding(padding: const EdgeInsets.only(top: 8.0), child: text);
     }
 
@@ -234,29 +313,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStrategyPerformanceChart(List<dynamic> performanceData) {
-    final barGroups = performanceData.asMap().entries.map((entry) {
-      final index = entry.key;
-      final data = entry.value;
-      final pnl = (data['pnl'] as num).toDouble();
-
-      return BarChartGroupData(
-        x: index,
-        barRods: [
-          BarChartRodData(
-            toY: pnl,
-            color: pnl >= 0 ? Colors.greenAccent : Colors.redAccent,
-            width: 16,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ],
-      );
-    }).toList();
+  // *** REFACTORED: Thay thế biểu đồ bằng danh sách trực quan ***
+  Widget _buildStrategyPerformanceList(List<dynamic> performanceData) {
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: '',
+    );
 
     return Card(
-      child: Container(
-        height: 250,
-        padding: const EdgeInsets.fromLTRB(16, 24, 24, 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -264,56 +330,91 @@ class _DashboardScreenState extends State<DashboardScreen> {
               "Hiệu suất theo chiến lược",
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  barGroups: barGroups,
-                  titlesData: FlTitlesData(
-                    show: true,
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (double value, TitleMeta meta) {
-                          final index = value.toInt();
-                          if (index >= 0 && index < performanceData.length) {
-                            final strategy =
-                                performanceData[index]['strategy'] as String;
-                            // *** FIX: Bỏ đi SideTitleWidget ***
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 4.0),
-                              child: Text(
-                                strategy.length > 8
-                                    ? '${strategy.substring(0, 6)}...'
-                                    : strategy,
-                                style: TextStyle(
-                                  color: Colors.grey.shade400,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            );
-                          }
-                          return const Text('');
-                        },
-                        reservedSize: 32,
+            const SizedBox(height: 16),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: performanceData.length,
+              separatorBuilder: (context, index) =>
+                  const Divider(height: 1, color: Colors.white12),
+              itemBuilder: (context, index) {
+                final data = performanceData[index];
+                final strategy = data['strategy'] as String;
+                final pnl = (data['pnl'] as num).toDouble();
+                final tradeCount = data['tradeCount'] as int;
+                final isProfit = pnl >= 0;
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: isProfit
+                              ? Colors.greenAccent
+                              : Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          strategy,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            const Text(
+                              "PnL",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              currencyFormatter.format(pnl),
+                              style: TextStyle(
+                                color: isProfit
+                                    ? Colors.greenAccent
+                                    : Colors.redAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            const Text(
+                              "Số lệnh",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              '$tradeCount',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  gridData: FlGridData(show: false),
-                  borderData: FlBorderData(show: false),
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),
@@ -322,6 +423,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildDayOfWeekPerformanceChart(List<dynamic> performanceData) {
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: '',
+    );
     final barGroups = performanceData.map((data) {
       final day = (data['day'] as num).toInt();
       final pnl = (data['pnl'] as num).toDouble();
@@ -355,6 +460,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: BarChart(
                 BarChartData(
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (group) => Colors.blueGrey,
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+                        return BarTooltipItem(
+                          '${days[group.x.toInt()]}\n',
+                          const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          children: <TextSpan>[
+                            TextSpan(
+                              text: currencyFormatter.format(rod.toY),
+                              style: TextStyle(
+                                color: rod.toY >= 0
+                                    ? Colors.greenAccent
+                                    : Colors.redAccent,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
                   alignment: BarChartAlignment.spaceAround,
                   barGroups: barGroups,
                   titlesData: FlTitlesData(
@@ -389,7 +520,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               fontSize: 14,
                             ),
                           );
-                          // *** FIX: Bỏ đi SideTitleWidget ***
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: text,
@@ -437,6 +567,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (_statsFuture != null) _statsFuture!,
         if (_performanceChartFuture != null) _performanceChartFuture!,
         if (_patternsFuture != null) _patternsFuture!,
+        if (_topTradesFuture != null) _topTradesFuture!,
       ]),
       builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         Widget buildTimeFilter() {
@@ -447,7 +578,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'yearly': 'Năm',
             'all': 'Tất cả',
           };
-
           return SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -492,9 +622,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final stats = snapshot.data![0] as Map<String, dynamic>;
         final performanceData = snapshot.data![1] as List<dynamic>;
         final patternsData = snapshot.data![2] as Map<String, dynamic>;
+        final topTradesData = snapshot.data![3] as Map<String, dynamic>;
+
         final byDayOfWeekData =
             patternsData['byDayOfWeek'] as List<dynamic>? ?? [];
-
         final totalPnl = (stats['totalPnl'] ?? 0.0).toDouble();
         final winrate = (stats['winrate'] ?? 0.0).toDouble();
         final averageWin = (stats['averageWin'] ?? 0.0).toDouble();
@@ -536,14 +667,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     mainAxisSpacing: 16,
                     childAspectRatio: 1.8,
                     children: [
-                      _buildStatCard(
-                        context,
-                        title: 'Tổng Lãi/Lỗ',
-                        value: currencyFormatter.format(totalPnl),
-                        icon: Icons.show_chart,
-                        valueColor: totalPnl >= 0
-                            ? Colors.greenAccent
-                            : Colors.redAccent,
+                      InkWell(
+                        onTap: () => _showTopTradesDialog(topTradesData),
+                        child: _buildStatCard(
+                          context,
+                          title: 'Tổng Lãi/Lỗ',
+                          value: currencyFormatter.format(totalPnl),
+                          icon: Icons.show_chart,
+                          valueColor: totalPnl >= 0
+                              ? Colors.greenAccent
+                              : Colors.redAccent,
+                        ),
                       ),
                       _buildStatCard(
                         context,
@@ -580,7 +714,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 16),
 
                   if (performanceData.isNotEmpty)
-                    _buildStrategyPerformanceChart(performanceData)
+                    _buildStrategyPerformanceList(performanceData)
                   else
                     Card(
                       child: Container(

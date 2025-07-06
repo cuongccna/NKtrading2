@@ -17,25 +17,18 @@ serve(async (req) => {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
-    // Lấy tham số timeRange từ yêu cầu
     const { timeRange } = await req.json();
     let startDate = new Date(0);
     const now = new Date();
 
     switch (timeRange) {
-      case 'daily':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
+      case 'daily': startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()); break;
       case 'weekly':
         const dayOfWeek = now.getDay();
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
         break;
-      case 'monthly':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-      case 'yearly':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        break;
+      case 'monthly': startDate = new Date(now.getFullYear(), now.getMonth(), 1); break;
+      case 'yearly': startDate = new Date(now.getFullYear(), 0, 1); break;
     }
 
     let query = supabaseClient
@@ -45,28 +38,37 @@ serve(async (req) => {
       .not("exit_price", "is", null)
       .not("strategy", "is", null);
 
-    // Áp dụng bộ lọc ngày nếu không phải 'all'
     if (timeRange !== 'all') {
         query = query.gte('created_at', startDate.toISOString());
     }
 
     const { data: trades, error } = await query;
-
     if (error) throw error;
 
-    const performanceByStrategy = new Map<string, number>();
+    // Sử dụng một Map để nhóm các chỉ số theo chiến lược
+    const performanceByStrategy = new Map<string, { pnl: number; winCount: number; tradeCount: number }>();
 
     for (const trade of trades) {
       const pnl = (trade.exit_price - trade.entry_price) * trade.quantity * (trade.direction === "Long" ? 1 : -1);
-      const currentPnl = performanceByStrategy.get(trade.strategy) || 0;
-      performanceByStrategy.set(trade.strategy, currentPnl + pnl);
+      const stats = performanceByStrategy.get(trade.strategy) || { pnl: 0, winCount: 0, tradeCount: 0 };
+      
+      stats.pnl += pnl;
+      stats.tradeCount += 1;
+      if (pnl > 0) {
+        stats.winCount += 1;
+      }
+      performanceByStrategy.set(trade.strategy, stats);
     }
 
-    const result = Array.from(performanceByStrategy, ([strategy, pnl]) => ({
+    // Chuyển đổi Map thành mảng và tính toán các chỉ số cuối cùng
+    const result = Array.from(performanceByStrategy, ([strategy, stats]) => ({
       strategy,
-      pnl,
+      pnl: stats.pnl,
+      tradeCount: stats.tradeCount,
+      winrate: stats.tradeCount > 0 ? (stats.winCount / stats.tradeCount) * 100 : 0,
     }));
     
+    // Sắp xếp theo PnL
     result.sort((a, b) => b.pnl - a.pnl);
 
     return new Response(JSON.stringify(result), {

@@ -218,4 +218,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get searchBySymbol => 'Tìm theo cặp giao dịch...';
+
+  @override
+  String get top10WinningTrades => 'Top 10 Giao dịch Lãi nhất';
+
+  @override
+  String get top10LosingTrades => 'Top 10 Giao dịch Lỗ nhất';
 }

@@ -517,6 +517,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search by symbol...'**
   String get searchBySymbol;
+
+  /// No description provided for @top10WinningTrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Top 10 Winning Trades'**
+  String get top10WinningTrades;
+
+  /// No description provided for @top10LosingTrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Top 10 Losing Trades'**
+  String get top10LosingTrades;
 }
 
 class _AppLocalizationsDelegate

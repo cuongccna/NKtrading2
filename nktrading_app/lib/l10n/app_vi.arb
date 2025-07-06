@@ -69,5 +69,7 @@
     "blockchain": "Mạng lưới",
     "noWallets": "Bạn chưa thêm địa chỉ ví nào.",
     "syncWallet": "Đồng bộ Ví",
-    "searchBySymbol": "Tìm theo cặp giao dịch..."
+    "searchBySymbol": "Tìm theo cặp giao dịch...",
+    "top10WinningTrades": "Top 10 Giao dịch Lãi nhất",
+    "top10LosingTrades": "Top 10 Giao dịch Lỗ nhất"
 }

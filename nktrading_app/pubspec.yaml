@@ -40,7 +40,7 @@ dependencies:
   intl: ^0.20.2          # Thêm dòng này
   flutter_gen: ^5.10.0
   image_picker: ^1.0.7 # Thêm dòng này
-  fl_chart: ^1.0.0 # Thêm dòng này
+  fl_chart: ^1.0.0 
 
 dev_dependencies:
   flutter_test:
