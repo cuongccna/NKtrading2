@@ -643,6 +643,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get delete;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @general.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get general;
+
+  /// No description provided for @currency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get currency;
+
+  /// No description provided for @usDollar.
+  ///
+  /// In en, this message translates to:
+  /// **'US Dollar'**
+  String get usDollar;
+
+  /// No description provided for @vietnameseDong.
+  ///
+  /// In en, this message translates to:
+  /// **'Vietnamese Dong'**
+  String get vietnameseDong;
 }
 
 class _AppLocalizationsDelegate

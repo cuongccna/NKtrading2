@@ -8,7 +8,6 @@ import '../../../../../main.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AddTradeScreen extends StatefulWidget {
-  // *** NEW: Thêm tham số để nhận dữ liệu giao dịch cần sửa ***
   final Map<String, dynamic>? initialTrade;
   const AddTradeScreen({super.key, this.initialTrade});
 
@@ -36,13 +35,11 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
   List<String> _strategyOptions = [];
   List<String> _emotionTagOptions = [];
 
-  // *** NEW: Cờ để xác định chế độ (Thêm mới hay Sửa) ***
   bool get _isEditMode => widget.initialTrade != null;
 
   @override
   void initState() {
     super.initState();
-    // Nếu là chế độ sửa, điền dữ liệu cũ vào form
     if (_isEditMode) {
       final trade = widget.initialTrade!;
       _symbolController.text = trade['symbol'] ?? '';
@@ -60,6 +57,18 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
     _fetchAutocompleteOptions();
   }
 
+  @override
+  void dispose() {
+    _symbolController.dispose();
+    _entryPriceController.dispose();
+    _exitPriceController.dispose();
+    _quantityController.dispose();
+    _strategyController.dispose();
+    _notesController.dispose();
+    _emotionTagsController.dispose();
+    super.dispose();
+  }
+
   Future<void> _fetchAutocompleteOptions() async {
     try {
       final userId = supabase.auth.currentUser!.id;
@@ -69,7 +78,10 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
           .eq('user_id', userId);
 
       final strategies = data
-          .where((e) => e['strategy'] != null)
+          .where(
+            (e) =>
+                e['strategy'] != null && (e['strategy'] as String).isNotEmpty,
+          )
           .map((e) => e['strategy'] as String)
           .toSet()
           .toList();
@@ -94,7 +106,6 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
     }
   }
 
-  // *** FIX: Thêm giới hạn kích thước ảnh ***
   Future<void> _pickImage(
     ImageSource source,
     Function(XFile) onImagePicked,
@@ -102,9 +113,9 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
       source: source,
-      maxWidth: 480, // Giới hạn chiều rộng
-      maxHeight: 320, // Giới hạn chiều cao
-      imageQuality: 85, // Chất lượng nén
+      maxWidth: 480,
+      maxHeight: 320,
+      imageQuality: 85,
     );
     if (pickedFile != null) {
       setState(() {
@@ -116,20 +127,18 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
   Future<String?> _uploadImage(XFile? imageFile) async {
     if (imageFile == null) return null;
     try {
-      final userId = supabase.auth.currentUser!.id;
       final imageBytes = await imageFile.readAsBytes();
       final fileName =
           '${DateTime.now().millisecondsSinceEpoch}.${imageFile.name.split('.').last}';
-      final filePath = '$userId/$fileName';
 
       await supabase.storage
-          .from('tradeimages')
+          .from('trade_images')
           .uploadBinary(
-            filePath,
+            fileName,
             imageBytes,
             fileOptions: FileOptions(contentType: imageFile.mimeType),
           );
-      return supabase.storage.from('tradeimages').getPublicUrl(filePath);
+      return supabase.storage.from('trade_images').getPublicUrl(fileName);
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
@@ -154,30 +163,30 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
           .where((e) => e.isNotEmpty)
           .toList();
 
-      // Tải ảnh mới lên nếu có
       final imageUrl = _beforeImageFile != null
           ? await _uploadImage(_beforeImageFile)
           : _existingImageUrl;
 
       final payload = {
         'user_id': userId,
-        'symbol': _symbolController.text,
+        'symbol': _symbolController.text.trim(),
         'direction': _direction,
         'entry_price': double.parse(_entryPriceController.text),
-        'exit_price': _exitPriceController.text.isEmpty
+        'exit_price': _exitPriceController.text.trim().isEmpty
             ? null
-            : double.parse(_exitPriceController.text),
+            : double.parse(_exitPriceController.text.trim()),
         'quantity': double.parse(_quantityController.text),
-        'strategy': _strategyController.text.isEmpty
+        'strategy': _strategyController.text.trim().isEmpty
             ? null
-            : _strategyController.text,
-        'notes': _notesController.text.isEmpty ? null : _notesController.text,
+            : _strategyController.text.trim(),
+        'notes': _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
         'mindset_rating': _mindsetRating.toInt(),
         'emotion_tags': emotionTags,
         'before_image_url': imageUrl,
       };
 
-      // *** NEW: Kiểm tra chế độ để gọi update hoặc insert ***
       if (_isEditMode) {
         await supabase.from('trades').update(payload).match({
           'id': widget.initialTrade!['id'],
@@ -188,7 +197,7 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Đã lưu giao dịch thành công!'),
             backgroundColor: Colors.green,
           ),
@@ -214,7 +223,6 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      // *** NEW: Thay đổi tiêu đề dựa trên chế độ ***
       appBar: AppBar(title: Text(_isEditMode ? l10n.editTrade : l10n.addTrade)),
       body: Form(
         key: _formKey,
@@ -240,11 +248,8 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
                       ),
                     )
                     .toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _direction = newValue!;
-                  });
-                },
+                onChanged: (String? newValue) =>
+                    setState(() => _direction = newValue!),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -267,26 +272,42 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
                 validator: (v) => v!.isEmpty ? 'Không được để trống' : null,
               ),
               const SizedBox(height: 16),
+              // *** FIX: Sửa lại Autocomplete để hoạt động đúng ***
               Autocomplete<String>(
+                initialValue: TextEditingValue(text: _strategyController.text),
                 optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text == '')
+                  if (textEditingValue.text.isEmpty) {
                     return const Iterable<String>.empty();
-                  return _strategyOptions.where(
-                    (o) => o.toLowerCase().contains(
+                  }
+                  return _strategyOptions.where((String option) {
+                    return option.toLowerCase().contains(
                       textEditingValue.text.toLowerCase(),
-                    ),
-                  );
+                    );
+                  });
                 },
-                onSelected: (String selection) =>
-                    _strategyController.text = selection,
-                fieldViewBuilder: (context, ctl, fn, _) {
-                  _strategyController.text = ctl.text;
-                  return TextFormField(
-                    controller: ctl,
-                    focusNode: fn,
-                    decoration: InputDecoration(labelText: l10n.strategy),
-                  );
+                onSelected: (String selection) {
+                  // Cập nhật controller khi người dùng chọn một mục
+                  _strategyController.text = selection;
                 },
+                fieldViewBuilder:
+                    (
+                      context,
+                      fieldTextEditingController,
+                      focusNode,
+                      onFieldSubmitted,
+                    ) {
+                      // Dùng một listener để cập nhật controller khi người dùng gõ
+                      // Điều này đảm bảo cả giá trị gõ tay và giá trị chọn đều được lưu
+                      fieldTextEditingController.addListener(() {
+                        _strategyController.text =
+                            fieldTextEditingController.text;
+                      });
+                      return TextFormField(
+                        controller: fieldTextEditingController,
+                        focusNode: focusNode,
+                        decoration: InputDecoration(labelText: l10n.strategy),
+                      );
+                    },
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -351,10 +372,7 @@ class _AddTradeScreenState extends State<AddTradeScreen> {
               const SizedBox(height: 32),
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : FilledButton(
-                      onPressed: _saveTrade,
-                      child: Text(l10n.saveTrade),
-                    ),
+                  : FilledButton(onPressed: _saveTrade, child: Text(l10n.save)),
             ],
           ),
         ),

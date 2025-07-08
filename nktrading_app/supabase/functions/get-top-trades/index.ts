@@ -17,6 +17,8 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
+    const { targetCurrency } = await req.json();
+
     // Lấy tất cả các giao dịch đã đóng của người dùng
     const { data: trades, error } = await supabase
       .from('trades')
@@ -26,10 +28,20 @@ serve(async (req) => {
 
     if (error) throw error;
 
+      // *** NEW: Lấy tỷ giá hối đoái ***
+    let exchangeRate = 1.0;
+    if (targetCurrency === 'VND') {
+      const { data: rateData } = await supabase.functions.invoke('get-exchange-rate');
+      if (rateData?.rate) {
+        exchangeRate = rateData.rate;
+      }
+    }
+
     // Tính toán PnL cho mỗi giao dịch
     const tradesWithPnl = trades.map(trade => {
         const pnl = (trade.exit_price - trade.entry_price) * trade.quantity * (trade.direction === 'Long' ? 1 : -1);
-        return { symbol: trade.symbol, pnl };
+        const convertedPnl = pnl * exchangeRate;
+        return { symbol: trade.symbol, pnl: convertedPnl };
     });
 
     // Sắp xếp theo PnL

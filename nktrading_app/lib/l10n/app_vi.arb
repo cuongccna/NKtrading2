@@ -90,5 +90,10 @@
     "confirmDeletion": "Xác nhận Xóa",
     "deleteConfirmation": "Bạn có chắc chắn muốn xóa vĩnh viễn giao dịch này không?",
     "cancel": "Hủy",
-    "delete": "Xóa"
+    "delete": "Xóa",
+    "settings": "Cài đặt",
+    "general": "Chung",
+    "currency": "Đơn vị tiền tệ",
+    "usDollar": "Đô la Mỹ",
+    "vietnameseDong": "Việt Nam Đồng"
 }

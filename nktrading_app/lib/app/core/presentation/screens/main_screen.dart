@@ -9,8 +9,8 @@ import '../../../features/journal/presentation/screens/journal_screen.dart';
 import '../../../features/journal/presentation/screens/add_trade_screen.dart'; // Import
 import '../../../features/journal/presentation/widgets/filter_dialog.dart';
 import '../../../features/journal/data/models/trade_filter_model.dart';
-import '../../../features/connections/presentation/screens/api_connections_screen.dart'; // Import
 import '../../../features/ai_insights/presentation/screens/ai_insights_screen.dart'; // Import
+import '../../../features/connections/presentation/screens/settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -109,9 +109,10 @@ class _MainScreenState extends State<MainScreen> {
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ApiConnectionsScreen()),
-              );
+              // *** FIX: Điều hướng đến SettingsScreen ***
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
             },
           ),
           IconButton(

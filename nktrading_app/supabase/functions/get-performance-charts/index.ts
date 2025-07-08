@@ -17,7 +17,7 @@ serve(async (req) => {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
-    const { timeRange } = await req.json();
+    const { timeRange, targetCurrency } = await req.json();
     let startDate = new Date(0);
     const now = new Date();
 
@@ -45,14 +45,24 @@ serve(async (req) => {
     const { data: trades, error } = await query;
     if (error) throw error;
 
+      // *** NEW: Lấy tỷ giá hối đoái ***
+    let exchangeRate = 1.0;
+    if (targetCurrency === 'VND') {
+      const { data: rateData } = await supabaseClient.functions.invoke('get-exchange-rate');
+      if (rateData?.rate) {
+        exchangeRate = rateData.rate;
+      }
+    }
+
     // Sử dụng một Map để nhóm các chỉ số theo chiến lược
     const performanceByStrategy = new Map<string, { pnl: number; winCount: number; tradeCount: number }>();
 
     for (const trade of trades) {
       const pnl = (trade.exit_price - trade.entry_price) * trade.quantity * (trade.direction === "Long" ? 1 : -1);
+      const convertedPnl = pnl * exchangeRate;
       const stats = performanceByStrategy.get(trade.strategy) || { pnl: 0, winCount: 0, tradeCount: 0 };
       
-      stats.pnl += pnl;
+      stats.pnl += convertedPnl;
       stats.tradeCount += 1;
       if (pnl > 0) {
         stats.winCount += 1;

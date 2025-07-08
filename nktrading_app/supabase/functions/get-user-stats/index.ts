@@ -28,7 +28,7 @@ serve(async (req) => {
     }
 
     // *** NEW: Lấy tham số timeRange từ yêu cầu ***
-    const { timeRange } = await req.json();
+    const { timeRange, targetCurrency } = await req.json();
     let startDate = new Date(0); // Mặc định lấy từ đầu
     const now = new Date();
 
@@ -65,7 +65,14 @@ serve(async (req) => {
     if (error) {
       throw error;
     }
-
+    // *** NEW: Lấy tỷ giá hối đoái ***
+    let exchangeRate = 1.0;
+    if (targetCurrency === 'VND') {
+      const { data: rateData } = await supabaseClient.functions.invoke('get-exchange-rate');
+      if (rateData?.rate) {
+        exchangeRate = rateData.rate;
+      }
+    }
     // --- Logic tính toán giữ nguyên ---
     let totalPnl = 0;
     let totalWins = 0;
@@ -81,17 +88,19 @@ serve(async (req) => {
       const quantity = trade.quantity;
       const isLong = trade.direction === "Long";
       const pnl = (exitPrice - entryPrice) * quantity * (isLong ? 1 : -1);
+      // *** NEW: Quy đổi PnL ***
+      const convertedPnl = pnl * exchangeRate;
       
-      totalPnl += pnl;
-      if (pnl > 0) {
+      totalPnl += convertedPnl;
+      if (convertedPnl > 0) {
         totalWins++;
         totalWinAmount += pnl;
-      } else if (pnl < 0) {
+     } else if (convertedPnl < 0) {
         totalLosses++;
         totalLossAmount += Math.abs(pnl);
       }
       
-      cumulativePnl += pnl;
+      cumulativePnl += convertedPnl;
       equityCurveData.push({
         date: trade.created_at,
         pnl: cumulativePnl,

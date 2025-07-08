@@ -282,4 +282,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get delete => 'Delete';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get general => 'General';
+
+  @override
+  String get currency => 'Currency';
+
+  @override
+  String get usDollar => 'US Dollar';
+
+  @override
+  String get vietnameseDong => 'Vietnamese Dong';
 }

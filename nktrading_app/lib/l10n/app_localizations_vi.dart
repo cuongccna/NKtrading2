@@ -282,4 +282,19 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get delete => 'Xóa';
+
+  @override
+  String get settings => 'Cài đặt';
+
+  @override
+  String get general => 'Chung';
+
+  @override
+  String get currency => 'Đơn vị tiền tệ';
+
+  @override
+  String get usDollar => 'Đô la Mỹ';
+
+  @override
+  String get vietnameseDong => 'Việt Nam Đồng';
 }

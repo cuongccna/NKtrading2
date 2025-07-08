@@ -14,12 +14,9 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  Future<Map<String, dynamic>>? _statsFuture;
-  Future<List<dynamic>>? _performanceChartFuture;
-  Future<Map<String, dynamic>>? _patternsFuture;
-  Future<Map<String, dynamic>>? _topTradesFuture;
-
+  Future<List<dynamic>>? _dataFutures;
   String _selectedTimeRange = 'all';
+  String _preferredCurrency = 'USD';
 
   @override
   void initState() {
@@ -27,61 +24,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _fetchData();
   }
 
-  void _fetchData() {
-    setState(() {
-      _statsFuture = _fetchUserStats(_selectedTimeRange);
-      _performanceChartFuture = _fetchPerformanceCharts(_selectedTimeRange);
-      _patternsFuture = _fetchPerformancePatterns();
-      _topTradesFuture = _fetchTopTrades();
-    });
-  }
-
-  Future<Map<String, dynamic>> _fetchUserStats(String timeRange) async {
+  void _fetchData() async {
+    // *** FIX: Xử lý trường hợp user_profile chưa được tạo ***
     try {
-      final result = await supabase.functions.invoke(
-        'get-user-stats',
-        body: {'timeRange': timeRange},
-      );
-      if (result.data == null) throw 'Không nhận được dữ liệu từ server.';
-      return result.data as Map<String, dynamic>;
+      final userId = supabase.auth.currentUser!.id;
+      final profileData = await supabase
+          .from('user_profiles')
+          .select('preferred_currency')
+          .eq('id', userId)
+          .maybeSingle(); // Dùng maybeSingle() để không báo lỗi nếu không có dòng nào
+
+      final currency = (profileData?['preferred_currency'] as String?) ?? 'USD';
+
+      if (mounted) {
+        setState(() {
+          _preferredCurrency = currency;
+          _dataFutures = Future.wait([
+            _fetchUserStats(_selectedTimeRange, currency),
+            _fetchPerformanceCharts(_selectedTimeRange, currency),
+            _fetchPerformancePatterns(),
+            _fetchTopTrades(currency),
+          ]);
+        });
+      }
     } catch (e) {
-      throw 'Không thể tải dữ liệu thống kê: $e';
+      if (mounted) {
+        setState(() {
+          _dataFutures = Future.error(e);
+        });
+      }
     }
   }
 
-  Future<List<dynamic>> _fetchPerformanceCharts(String timeRange) async {
-    try {
-      final result = await supabase.functions.invoke(
-        'get-performance-charts',
-        body: {'timeRange': timeRange},
-      );
-      if (result.data == null) throw 'Không nhận được dữ liệu biểu đồ.';
-      return result.data as List<dynamic>;
-    } catch (e) {
-      throw 'Không thể tải dữ liệu biểu đồ hiệu suất: $e';
-    }
+  Future<Map<String, dynamic>> _fetchUserStats(
+    String timeRange,
+    String targetCurrency,
+  ) async {
+    final result = await supabase.functions.invoke(
+      'get-user-stats',
+      body: {'timeRange': timeRange, 'targetCurrency': targetCurrency},
+    );
+    if (result.data == null) throw 'Lỗi tải dữ liệu thống kê';
+    return result.data;
+  }
+
+  Future<List<dynamic>> _fetchPerformanceCharts(
+    String timeRange,
+    String targetCurrency,
+  ) async {
+    final result = await supabase.functions.invoke(
+      'get-performance-charts',
+      body: {'timeRange': timeRange, 'targetCurrency': targetCurrency},
+    );
+    if (result.data == null) throw 'Lỗi tải dữ liệu biểu đồ';
+    return result.data;
   }
 
   Future<Map<String, dynamic>> _fetchPerformancePatterns() async {
-    try {
-      final result = await supabase.functions.invoke(
-        'get-performance-patterns',
-      );
-      if (result.data == null) throw 'Không nhận được dữ liệu phân tích.';
-      return result.data as Map<String, dynamic>;
-    } catch (e) {
-      throw 'Không thể tải dữ liệu phân tích: $e';
-    }
+    final result = await supabase.functions.invoke('get-performance-patterns');
+    if (result.data == null) throw 'Lỗi tải dữ liệu phân tích';
+    return result.data;
   }
 
-  Future<Map<String, dynamic>> _fetchTopTrades() async {
-    try {
-      final result = await supabase.functions.invoke('get-top-trades');
-      if (result.data == null) throw 'Không nhận được dữ liệu top trades.';
-      return result.data as Map<String, dynamic>;
-    } catch (e) {
-      throw 'Không thể tải dữ liệu top trades: $e';
-    }
+  Future<Map<String, dynamic>> _fetchTopTrades(String targetCurrency) async {
+    final result = await supabase.functions.invoke(
+      'get-top-trades',
+      body: {'targetCurrency': targetCurrency},
+    );
+    if (result.data == null) throw 'Lỗi tải dữ liệu top trades';
+    return result.data;
   }
 
   Widget _buildStatCard(
@@ -313,12 +324,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // *** REFACTORED: Thay thế biểu đồ bằng danh sách trực quan ***
   Widget _buildStrategyPerformanceList(List<dynamic> performanceData) {
     final currencyFormatter = NumberFormat.currency(
       locale: 'vi_VN',
       symbol: '',
     );
+
+    double maxPnl = 0;
+    for (var item in performanceData) {
+      final pnl = (item['pnl'] as num).abs();
+      if (pnl > maxPnl) {
+        maxPnl = pnl.toDouble();
+      }
+    }
 
     return Card(
       child: Padding(
@@ -336,83 +354,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: performanceData.length,
               separatorBuilder: (context, index) =>
-                  const Divider(height: 1, color: Colors.white12),
+                  const Divider(height: 24, color: Colors.white12),
               itemBuilder: (context, index) {
                 final data = performanceData[index];
                 final strategy = data['strategy'] as String;
                 final pnl = (data['pnl'] as num).toDouble();
+                final winrate = (data['winrate'] as num);
                 final tradeCount = data['tradeCount'] as int;
                 final isProfit = pnl >= 0;
+                final barRatio = maxPnl > 0 ? (pnl.abs() / maxPnl) : 0.0;
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: isProfit
-                              ? Colors.greenAccent
-                              : Colors.redAccent,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
                           strategy,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            const Text(
-                              "PnL",
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
-                            ),
-                            Text(
-                              currencyFormatter.format(pnl),
-                              style: TextStyle(
-                                color: isProfit
-                                    ? Colors.greenAccent
-                                    : Colors.redAccent,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          '${winrate.toStringAsFixed(1)}% WR ($tradeCount lệnh)',
+                          style: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            const Text(
-                              "Số lệnh",
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: LinearProgressIndicator(
+                            value: barRatio,
+                            backgroundColor: Colors.grey.shade800,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              isProfit ? Colors.greenAccent : Colors.redAccent,
                             ),
-                            Text(
-                              '$tradeCount',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                            minHeight: 6,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 12),
+                        Text(
+                          currencyFormatter.format(pnl),
+                          style: TextStyle(
+                            color: isProfit
+                                ? Colors.greenAccent
+                                : Colors.redAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 );
               },
             ),
@@ -562,13 +559,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: Future.wait([
-        if (_statsFuture != null) _statsFuture!,
-        if (_performanceChartFuture != null) _performanceChartFuture!,
-        if (_patternsFuture != null) _patternsFuture!,
-        if (_topTradesFuture != null) _topTradesFuture!,
-      ]),
+    return FutureBuilder<List<dynamic>>(
+      future: _dataFutures,
       builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         Widget buildTimeFilter() {
           final Map<String, String> timeRanges = {
@@ -616,7 +608,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('Không có dữ liệu thống kê.'));
+          return Center(child: Text('Không có dữ liệu thống kê.'));
         }
 
         final stats = snapshot.data![0] as Map<String, dynamic>;
@@ -634,8 +626,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final equityCurveData = stats['equityCurve'] as List<dynamic>? ?? [];
 
         final currencyFormatter = NumberFormat.currency(
-          locale: 'vi_VN',
-          symbol: '',
+          locale: _preferredCurrency == 'VND' ? 'vi_VN' : 'en_US',
+          symbol: _preferredCurrency == 'VND' ? '₫' : '\$',
         );
 
         return RefreshIndicator(
