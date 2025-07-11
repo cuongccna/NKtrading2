@@ -344,4 +344,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activeAddresses => 'Active Addresses (24h)';
+
+  @override
+  String get whaleNetflow => 'Whale Netflow on Exchanges';
+
+  @override
+  String get whaleToExchange => 'To Exchanges';
+
+  @override
+  String get exchangeToWhale => 'From Exchanges';
 }

@@ -3,6 +3,7 @@ import '../../../../../l10n/app_localizations.dart';
 import 'image_viewer_screen.dart'; // Import màn hình xem ảnh mới
 import 'package:intl/intl.dart';
 import '../../../../../main.dart';
+import 'package:fl_chart/fl_chart.dart'; // Import fl_chart
 
 class TradeDetailScreen extends StatefulWidget {
   final Map<String, dynamic> trade;
@@ -97,7 +98,7 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
 
             const Divider(height: 32),
             Text(
-              l10n.smartMoneyChecklist,
+              l10n.marketContext,
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -204,67 +205,80 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
           return Text(AppLocalizations.of(context)!.noMarketData);
         }
 
-        final contextData = snapshot.data!['marketContext'];
-        final l10n = AppLocalizations.of(context)!;
-        final numberFormatter = NumberFormat.compact(locale: 'en_US');
+        final marketContext = snapshot.data!['marketContext'];
+        final santimentData = marketContext['santiment'];
+        final duneData = (marketContext['dune'] as List<dynamic>?)?.reversed
+            .toList();
 
-        return Card(
-          elevation: 0,
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                _buildChecklistItem(
-                  l10n.socialVolume,
-                  numberFormatter.format(contextData['social_volume'] ?? 0),
-                  contextData['sentiment_balance'] > 0
-                      ? l10n.positive
-                      : l10n.negative,
-                  contextData['sentiment_balance'] > 0
-                      ? Colors.greenAccent
-                      : Colors.redAccent,
-                ),
-                const Divider(color: Colors.white10),
-                _buildChecklistItem(
-                  l10n.exchangeFlow,
-                  'In: ${numberFormatter.format(contextData['exchange_inflow'] ?? 0)} / Out: ${numberFormatter.format(contextData['exchange_outflow'] ?? 0)}',
-                  (contextData['exchange_outflow'] ?? 0) >
-                          (contextData['exchange_inflow'] ?? 0)
-                      ? l10n.outflow
-                      : l10n.inflow,
-                  (contextData['exchange_outflow'] ?? 0) >
-                          (contextData['exchange_inflow'] ?? 0)
-                      ? Colors.greenAccent
-                      : Colors.redAccent,
-                ),
-                const Divider(color: Colors.white10),
-                _buildChecklistItem(
-                  l10n.topHolders,
-                  '${(contextData['top_holders_percent_of_total_supply'] ?? 0.0).toStringAsFixed(2)}%',
-                  (contextData['top_holders_percent_of_total_supply'] ?? 0) > 50
-                      ? 'Tập trung'
-                      : 'Phân tán',
-                  null,
-                ),
-                const Divider(color: Colors.white10),
-                _buildChecklistItem(
-                  l10n.activeAddresses,
-                  numberFormatter.format(
-                    contextData['active_addresses_24h'] ?? 0,
-                  ),
-                  (contextData['active_addresses_24h'] ?? 0) > 100000
-                      ? 'Sôi động'
-                      : 'Bình thường',
-                  (contextData['active_addresses_24h'] ?? 0) > 100000
-                      ? Colors.cyanAccent
-                      : null,
-                ),
-              ],
-            ),
-          ),
+        return Column(
+          children: [
+            if (santimentData != null) _buildSantimentChecklist(santimentData),
+            if (duneData != null && duneData.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              _buildWhaleFlowChart(duneData),
+            ],
+          ],
         );
       },
+    );
+  }
+
+  Widget _buildSantimentChecklist(Map<String, dynamic> contextData) {
+    final l10n = AppLocalizations.of(context)!;
+    final numberFormatter = NumberFormat.compact(locale: 'en_US');
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _buildChecklistItem(
+              l10n.socialVolume,
+              numberFormatter.format(contextData['social_volume'] ?? 0),
+              (contextData['sentiment_balance'] ?? 0) > 0
+                  ? l10n.positive
+                  : l10n.negative,
+              (contextData['sentiment_balance'] ?? 0) > 0
+                  ? Colors.greenAccent
+                  : Colors.redAccent,
+            ),
+            const Divider(color: Colors.white10),
+            _buildChecklistItem(
+              l10n.exchangeFlow,
+              'In: ${numberFormatter.format(contextData['exchange_inflow'] ?? 0)} / Out: ${numberFormatter.format(contextData['exchange_outflow'] ?? 0)}',
+              (contextData['exchange_outflow'] ?? 0) >
+                      (contextData['exchange_inflow'] ?? 0)
+                  ? l10n.outflow
+                  : l10n.inflow,
+              (contextData['exchange_outflow'] ?? 0) >
+                      (contextData['exchange_inflow'] ?? 0)
+                  ? Colors.greenAccent
+                  : Colors.redAccent,
+            ),
+            const Divider(color: Colors.white10),
+            _buildChecklistItem(
+              l10n.topHolders,
+              '${(contextData['top_holders_percent_of_total_supply'] ?? 0.0).toStringAsFixed(2)}%',
+              (contextData['top_holders_percent_of_total_supply'] ?? 0) > 50
+                  ? 'Tập trung'
+                  : 'Phân tán',
+              null,
+            ),
+            const Divider(color: Colors.white10),
+            _buildChecklistItem(
+              l10n.activeAddresses,
+              numberFormatter.format(contextData['active_addresses_24h'] ?? 0),
+              (contextData['active_addresses_24h'] ?? 0) > 100000
+                  ? 'Sôi động'
+                  : 'Bình thường',
+              (contextData['active_addresses_24h'] ?? 0) > 100000
+                  ? Colors.cyanAccent
+                  : null,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -306,6 +320,154 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
               visualDensity: VisualDensity.compact,
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWhaleFlowChart(List<dynamic> duneData) {
+    final l10n = AppLocalizations.of(context)!;
+    final currencyFormatter = NumberFormat.compact(locale: 'en_US');
+
+    final barGroups = duneData.asMap().entries.map((entry) {
+      final index = entry.key;
+      final data = entry.value;
+      final toExchange = (data['whale_to_exchange'] as num?)?.toDouble() ?? 0.0;
+      final fromExchange =
+          (data['exchange_to_whale'] as num?)?.toDouble() ?? 0.0;
+
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: toExchange,
+            color: Colors.redAccent,
+            width: 15,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          BarChartRodData(
+            toY: fromExchange,
+            color: Colors.greenAccent,
+            width: 15,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      );
+    }).toList();
+
+    return Card(
+      child: Container(
+        height: 300,
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.whaleNetflow,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            Text(
+              "Trong 7 ngày qua",
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  barGroups: barGroups,
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (group) => Colors.blueGrey,
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final title = rodIndex == 0
+                            ? l10n.whaleToExchange
+                            : l10n.exchangeToWhale;
+                        return BarTooltipItem(
+                          '$title\n',
+                          const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          children: <TextSpan>[
+                            TextSpan(
+                              text: currencyFormatter.format(rod.toY),
+                              style: TextStyle(
+                                color: rod.color,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          if (value % 5000000 != 0 && value != 0)
+                            return const SizedBox.shrink();
+                          return Text(
+                            '${(value / 1000000).toStringAsFixed(0)}M',
+                            style: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 10,
+                            ),
+                          );
+                        },
+                        reservedSize: 40,
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (double value, TitleMeta meta) {
+                          final index = value.toInt();
+                          if (index >= 0 && index < duneData.length) {
+                            final date = DateTime.parse(
+                              duneData[index]['date'],
+                            );
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: Text(
+                                DateFormat('dd/MM').format(date),
+                                style: TextStyle(
+                                  color: Colors.grey.shade400,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                        reservedSize: 32,
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: 5000000,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: Colors.grey.withOpacity(0.2),
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

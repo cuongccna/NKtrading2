@@ -763,6 +763,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Active Addresses (24h)'**
   String get activeAddresses;
+
+  /// No description provided for @whaleNetflow.
+  ///
+  /// In en, this message translates to:
+  /// **'Whale Netflow on Exchanges'**
+  String get whaleNetflow;
+
+  /// No description provided for @whaleToExchange.
+  ///
+  /// In en, this message translates to:
+  /// **'To Exchanges'**
+  String get whaleToExchange;
+
+  /// No description provided for @exchangeToWhale.
+  ///
+  /// In en, this message translates to:
+  /// **'From Exchanges'**
+  String get exchangeToWhale;
 }
 
 class _AppLocalizationsDelegate

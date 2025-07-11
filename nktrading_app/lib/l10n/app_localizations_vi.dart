@@ -344,4 +344,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get activeAddresses => 'Địa chỉ hoạt động (24h)';
+
+  @override
+  String get whaleNetflow => 'Dòng tiền ròng của Cá voi trên Sàn';
+
+  @override
+  String get whaleToExchange => 'Chuyển lên Sàn';
+
+  @override
+  String get exchangeToWhale => 'Rút khỏi Sàn';
 }

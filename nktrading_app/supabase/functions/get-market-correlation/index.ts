@@ -1,9 +1,33 @@
-// File: supabase/functions/get-market-correlation/index.ts (CẬP NHẬT LỚN)
-// Nhiệm vụ: Lấy một bộ dữ liệu thị trường đầy đủ tương ứng với thời điểm giao dịch.
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+
+async function getAssetSlug(supabase: SupabaseClient, userSymbol: string): Promise<string | null> {
+    let { data: dictEntry, error } = await supabase
+        .from('symbol_dictionary')
+        .select('santiment_slug')
+        .eq('user_symbol', userSymbol)
+        .limit(1)
+        .single();
+
+    if (!dictEntry) {
+        const baseSymbol = userSymbol.split('/')[0].toUpperCase();
+        const { data: baseEntry } = await supabase
+            .from('symbol_dictionary')
+            .select('santiment_slug')
+            .ilike('user_symbol', `${baseSymbol}/%`)
+            .limit(1)
+            .single();
+        dictEntry = baseEntry;
+    }
+
+    if (error && error.code !== 'PGRST116') {
+        console.error("Error fetching from dictionary:", error);
+        return null;
+    }
+    
+    return dictEntry?.santiment_slug ?? null;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -23,7 +47,6 @@ serve(async (req) => {
     const { trade_id } = await req.json();
     if (!trade_id) throw new Error("Missing trade_id");
 
-    // 1. Lấy thông tin thời gian và tài sản của giao dịch
     const { data: tradeData, error: tradeError } = await supabase
       .from("trades")
       .select("created_at, symbol")
@@ -32,34 +55,42 @@ serve(async (req) => {
 
     if (tradeError) throw tradeError;
 
-    const tradeTimestamp = new Date(tradeData.created_at);
-    // Chuyển đổi symbol (vd: BTC/USDT -> bitcoin)
-    // Lưu ý: Cần một cơ chế mapping tốt hơn trong tương lai
-    const asset = tradeData.symbol.split('/')[0].toLowerCase(); 
-
-    // 2. Tìm bản ghi dữ liệu thị trường gần nhất với thời điểm giao dịch
-    // Chúng ta tìm bản ghi có timestamp nhỏ hơn hoặc bằng và gần nhất
-    const { data: marketData, error: marketError } = await supabase
-      .from("market_data_snapshots")
-      .select("*") // Lấy tất cả các cột
-      .eq("asset", asset)
-      .lte("timestamp", tradeData.created_at) // Lấy snapshot trước hoặc tại thời điểm trade
-      .order("timestamp", { ascending: false }) // Sắp xếp để lấy cái gần nhất
-      .limit(1)
-      .single(); // Chỉ lấy một bản ghi
-
-    if (marketError) {
-        // Nếu không tìm thấy bản ghi nào, không phải là lỗi nghiêm trọng
-        if (marketError.code === 'PGRST116') {
-             return new Response(JSON.stringify({ marketContext: null, message: "No market data snapshot found for this time." }), {
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-                status: 200,
-            });
-        }
-        throw marketError;
+    const asset = await getAssetSlug(supabase, tradeData.symbol);
+    if (!asset) {
+      return new Response(JSON.stringify({ marketContext: null, message: `Asset mapping for ${tradeData.symbol} not found.` }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
-    return new Response(JSON.stringify({ marketContext: marketData }), {
+    const tradeDate = tradeData.created_at.split('T')[0];
+
+    // Lấy đồng thời dữ liệu từ cả hai bảng
+    const [santimentResult, duneResult] = await Promise.all([
+      // Lấy dữ liệu Santiment gần nhất
+      supabase
+        .from("market_data_snapshots")
+        .select("*")
+        .eq("asset", asset)
+        .lte("timestamp", tradeData.created_at)
+        .order("timestamp", { ascending: false })
+        .limit(1)
+        .single(),
+      // *** FIX: Lấy dữ liệu Dune của 7 ngày gần nhất TÍNH TỪ NGÀY GIAO DỊCH ***
+      supabase
+        .from("dune_whale_data")
+        .select("*")
+        .lte("date", tradeDate) // Lấy các ngày nhỏ hơn hoặc bằng ngày giao dịch
+        .order("date", { ascending: false }) // Sắp xếp để lấy 7 ngày gần nhất
+        .limit(7)
+    ]);
+
+    const marketContext = {
+      santiment: santimentResult.data,
+      dune: duneResult.data,
+    };
+
+    return new Response(JSON.stringify({ marketContext }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
