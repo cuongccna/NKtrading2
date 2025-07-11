@@ -95,5 +95,20 @@
     "general": "General",
     "currency": "Currency",
     "usDollar": "US Dollar",
-    "vietnameseDong": "Vietnamese Dong"
+    "vietnameseDong": "Vietnamese Dong",
+    "marketContext": "Market Context",
+    "smartMoneyChecklist": "Smart Money Checklist",
+    "socialVolume": "Social Volume",
+    "sentiment": "Sentiment",
+    "exchangeFlow": "Exchange Flow",
+    "whaleActivity": "Whale Activity",
+    "atTimeOfTrade": "At the time of the trade, the social volume for {asset} was {value}.",
+    "noMarketData": "No market data available for this time.",
+    "positive": "Positive",
+    "negative": "Negative",
+    "neutral": "Neutral",
+    "inflow": "Inflow",
+    "outflow": "Outflow",
+    "topHolders": "Top Holders Supply",
+    "activeAddresses": "Active Addresses (24h)"
 }

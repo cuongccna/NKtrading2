@@ -297,4 +297,51 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get vietnameseDong => 'Việt Nam Đồng';
+
+  @override
+  String get marketContext => 'Bối cảnh Thị trường';
+
+  @override
+  String get smartMoneyChecklist => 'Checklist Dòng tiền Thông minh';
+
+  @override
+  String get socialVolume => 'Khối lượng Mạng xã hội';
+
+  @override
+  String get sentiment => 'Tâm lý';
+
+  @override
+  String get exchangeFlow => 'Dòng tiền trên Sàn';
+
+  @override
+  String get whaleActivity => 'Hành động Cá voi';
+
+  @override
+  String atTimeOfTrade(Object asset, Object value) {
+    return 'Tại thời điểm giao dịch, khối lượng mạng xã hội cho $asset là $value.';
+  }
+
+  @override
+  String get noMarketData => 'Không có dữ liệu thị trường cho thời điểm này.';
+
+  @override
+  String get positive => 'Tích cực';
+
+  @override
+  String get negative => 'Tiêu cực';
+
+  @override
+  String get neutral => 'Trung lập';
+
+  @override
+  String get inflow => 'Nạp lên sàn';
+
+  @override
+  String get outflow => 'Rút khỏi sàn';
+
+  @override
+  String get topHolders => '% Cung của Top Holders';
+
+  @override
+  String get activeAddresses => 'Địa chỉ hoạt động (24h)';
 }

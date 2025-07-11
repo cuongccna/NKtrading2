@@ -108,3 +108,25 @@ entrypoint = "./functions/get-exchange-rate/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/get-exchange-rate/*.html" ]
+
+[functions.fetch-market-data]
+enabled = true
+verify_jwt = true
+import_map = "./functions/fetch-market-data/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/fetch-market-data/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/fetch-market-data/*.html" ]
+
+[functions.get-market-correlation]
+enabled = true
+verify_jwt = true
+import_map = "./functions/get-market-correlation/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/get-market-correlation/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/get-market-correlation/*.html" ]

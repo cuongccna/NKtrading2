@@ -95,5 +95,20 @@
     "general": "Chung",
     "currency": "Đơn vị tiền tệ",
     "usDollar": "Đô la Mỹ",
-    "vietnameseDong": "Việt Nam Đồng"
+    "vietnameseDong": "Việt Nam Đồng",
+    "marketContext": "Bối cảnh Thị trường",
+    "smartMoneyChecklist": "Checklist Dòng tiền Thông minh",
+    "socialVolume": "Khối lượng Mạng xã hội",
+    "sentiment": "Tâm lý",
+    "exchangeFlow": "Dòng tiền trên Sàn",
+    "whaleActivity": "Hành động Cá voi",
+    "atTimeOfTrade": "Tại thời điểm giao dịch, khối lượng mạng xã hội cho {asset} là {value}.",
+    "noMarketData": "Không có dữ liệu thị trường cho thời điểm này.",
+    "positive": "Tích cực",
+    "negative": "Tiêu cực",
+    "neutral": "Trung lập",
+    "inflow": "Nạp lên sàn",
+    "outflow": "Rút khỏi sàn",
+    "topHolders": "% Cung của Top Holders",
+    "activeAddresses": "Địa chỉ hoạt động (24h)"
 }

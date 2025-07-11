@@ -673,6 +673,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Vietnamese Dong'**
   String get vietnameseDong;
+
+  /// No description provided for @marketContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Market Context'**
+  String get marketContext;
+
+  /// No description provided for @smartMoneyChecklist.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Money Checklist'**
+  String get smartMoneyChecklist;
+
+  /// No description provided for @socialVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Social Volume'**
+  String get socialVolume;
+
+  /// No description provided for @sentiment.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentiment'**
+  String get sentiment;
+
+  /// No description provided for @exchangeFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange Flow'**
+  String get exchangeFlow;
+
+  /// No description provided for @whaleActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Whale Activity'**
+  String get whaleActivity;
+
+  /// No description provided for @atTimeOfTrade.
+  ///
+  /// In en, this message translates to:
+  /// **'At the time of the trade, the social volume for {asset} was {value}.'**
+  String atTimeOfTrade(Object asset, Object value);
+
+  /// No description provided for @noMarketData.
+  ///
+  /// In en, this message translates to:
+  /// **'No market data available for this time.'**
+  String get noMarketData;
+
+  /// No description provided for @positive.
+  ///
+  /// In en, this message translates to:
+  /// **'Positive'**
+  String get positive;
+
+  /// No description provided for @negative.
+  ///
+  /// In en, this message translates to:
+  /// **'Negative'**
+  String get negative;
+
+  /// No description provided for @neutral.
+  ///
+  /// In en, this message translates to:
+  /// **'Neutral'**
+  String get neutral;
+
+  /// No description provided for @inflow.
+  ///
+  /// In en, this message translates to:
+  /// **'Inflow'**
+  String get inflow;
+
+  /// No description provided for @outflow.
+  ///
+  /// In en, this message translates to:
+  /// **'Outflow'**
+  String get outflow;
+
+  /// No description provided for @topHolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Top Holders Supply'**
+  String get topHolders;
+
+  /// No description provided for @activeAddresses.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Addresses (24h)'**
+  String get activeAddresses;
 }
 
 class _AppLocalizationsDelegate

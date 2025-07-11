@@ -297,4 +297,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get vietnameseDong => 'Vietnamese Dong';
+
+  @override
+  String get marketContext => 'Market Context';
+
+  @override
+  String get smartMoneyChecklist => 'Smart Money Checklist';
+
+  @override
+  String get socialVolume => 'Social Volume';
+
+  @override
+  String get sentiment => 'Sentiment';
+
+  @override
+  String get exchangeFlow => 'Exchange Flow';
+
+  @override
+  String get whaleActivity => 'Whale Activity';
+
+  @override
+  String atTimeOfTrade(Object asset, Object value) {
+    return 'At the time of the trade, the social volume for $asset was $value.';
+  }
+
+  @override
+  String get noMarketData => 'No market data available for this time.';
+
+  @override
+  String get positive => 'Positive';
+
+  @override
+  String get negative => 'Negative';
+
+  @override
+  String get neutral => 'Neutral';
+
+  @override
+  String get inflow => 'Inflow';
+
+  @override
+  String get outflow => 'Outflow';
+
+  @override
+  String get topHolders => 'Top Holders Supply';
+
+  @override
+  String get activeAddresses => 'Active Addresses (24h)';
 }
