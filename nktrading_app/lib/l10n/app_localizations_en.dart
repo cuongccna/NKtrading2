@@ -299,30 +299,121 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vietnameseDong => 'Vietnamese Dong';
 
   @override
+  String get whaleNetflow => 'Whale Netflow on Exchanges';
+
+  @override
+  String get whaleToExchange => 'To Exchanges';
+
+  @override
+  String get exchangeToWhale => 'From Exchanges';
+
+  @override
+  String get daily => 'Daily';
+
+  @override
+  String get weekly => 'Weekly';
+
+  @override
+  String get monthly => 'Monthly';
+
+  @override
+  String get yearly => 'Yearly';
+
+  @override
+  String get noData => 'No data available';
+
+  @override
+  String get errorLoading => 'Error loading data';
+
+  @override
+  String get refreshToRetry => 'Pull to refresh';
+
+  @override
+  String get performanceByStrategy => 'Performance by Strategy';
+
+  @override
+  String get performanceByDay => 'Performance by Day';
+
+  @override
+  String get growthChart => 'Growth Chart';
+
+  @override
+  String get averageProfit => 'Average Profit';
+
+  @override
+  String get averageLoss => 'Average Loss';
+
+  @override
+  String get totalProfit => 'Total Profit';
+
+  @override
+  String get totalLoss => 'Total Loss';
+
+  @override
+  String get profitFactor => 'Profit Factor';
+
+  @override
+  String get trades => 'trades';
+
+  @override
+  String get sunday => 'Sunday';
+
+  @override
+  String get monday => 'Monday';
+
+  @override
+  String get tuesday => 'Tuesday';
+
+  @override
+  String get wednesday => 'Wednesday';
+
+  @override
+  String get thursday => 'Thursday';
+
+  @override
+  String get friday => 'Friday';
+
+  @override
+  String get saturday => 'Saturday';
+
+  @override
+  String get sun => 'Sun';
+
+  @override
+  String get mon => 'Mon';
+
+  @override
+  String get tue => 'Tue';
+
+  @override
+  String get wed => 'Wed';
+
+  @override
+  String get thu => 'Thu';
+
+  @override
+  String get fri => 'Fri';
+
+  @override
+  String get sat => 'Sat';
+
+  @override
+  String get noDataInTimeRange => 'No data in selected time range';
+
+  @override
+  String get tapToViewDetails => 'Tap to view details';
+
+  @override
+  String get close => 'Close';
+
+  @override
   String get marketContext => 'Market Context';
 
   @override
-  String get smartMoneyChecklist => 'Smart Money Checklist';
+  String get noMarketData => 'No market data available for this time.';
 
   @override
   String get socialVolume => 'Social Volume';
-
-  @override
-  String get sentiment => 'Sentiment';
-
-  @override
-  String get exchangeFlow => 'Exchange Flow';
-
-  @override
-  String get whaleActivity => 'Whale Activity';
-
-  @override
-  String atTimeOfTrade(Object asset, Object value) {
-    return 'At the time of the trade, the social volume for $asset was $value.';
-  }
-
-  @override
-  String get noMarketData => 'No market data available for this time.';
 
   @override
   String get positive => 'Positive';
@@ -331,26 +422,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get negative => 'Negative';
 
   @override
-  String get neutral => 'Neutral';
-
-  @override
-  String get inflow => 'Inflow';
+  String get exchangeFlow => 'Exchange Flow';
 
   @override
   String get outflow => 'Outflow';
+
+  @override
+  String get inflow => 'Inflow';
 
   @override
   String get topHolders => 'Top Holders Supply';
 
   @override
   String get activeAddresses => 'Active Addresses (24h)';
-
-  @override
-  String get whaleNetflow => 'Whale Netflow on Exchanges';
-
-  @override
-  String get whaleToExchange => 'To Exchanges';
-
-  @override
-  String get exchangeToWhale => 'From Exchanges';
 }

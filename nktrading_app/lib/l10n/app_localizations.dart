@@ -674,96 +674,6 @@ abstract class AppLocalizations {
   /// **'Vietnamese Dong'**
   String get vietnameseDong;
 
-  /// No description provided for @marketContext.
-  ///
-  /// In en, this message translates to:
-  /// **'Market Context'**
-  String get marketContext;
-
-  /// No description provided for @smartMoneyChecklist.
-  ///
-  /// In en, this message translates to:
-  /// **'Smart Money Checklist'**
-  String get smartMoneyChecklist;
-
-  /// No description provided for @socialVolume.
-  ///
-  /// In en, this message translates to:
-  /// **'Social Volume'**
-  String get socialVolume;
-
-  /// No description provided for @sentiment.
-  ///
-  /// In en, this message translates to:
-  /// **'Sentiment'**
-  String get sentiment;
-
-  /// No description provided for @exchangeFlow.
-  ///
-  /// In en, this message translates to:
-  /// **'Exchange Flow'**
-  String get exchangeFlow;
-
-  /// No description provided for @whaleActivity.
-  ///
-  /// In en, this message translates to:
-  /// **'Whale Activity'**
-  String get whaleActivity;
-
-  /// No description provided for @atTimeOfTrade.
-  ///
-  /// In en, this message translates to:
-  /// **'At the time of the trade, the social volume for {asset} was {value}.'**
-  String atTimeOfTrade(Object asset, Object value);
-
-  /// No description provided for @noMarketData.
-  ///
-  /// In en, this message translates to:
-  /// **'No market data available for this time.'**
-  String get noMarketData;
-
-  /// No description provided for @positive.
-  ///
-  /// In en, this message translates to:
-  /// **'Positive'**
-  String get positive;
-
-  /// No description provided for @negative.
-  ///
-  /// In en, this message translates to:
-  /// **'Negative'**
-  String get negative;
-
-  /// No description provided for @neutral.
-  ///
-  /// In en, this message translates to:
-  /// **'Neutral'**
-  String get neutral;
-
-  /// No description provided for @inflow.
-  ///
-  /// In en, this message translates to:
-  /// **'Inflow'**
-  String get inflow;
-
-  /// No description provided for @outflow.
-  ///
-  /// In en, this message translates to:
-  /// **'Outflow'**
-  String get outflow;
-
-  /// No description provided for @topHolders.
-  ///
-  /// In en, this message translates to:
-  /// **'Top Holders Supply'**
-  String get topHolders;
-
-  /// No description provided for @activeAddresses.
-  ///
-  /// In en, this message translates to:
-  /// **'Active Addresses (24h)'**
-  String get activeAddresses;
-
   /// No description provided for @whaleNetflow.
   ///
   /// In en, this message translates to:
@@ -781,6 +691,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'From Exchanges'**
   String get exchangeToWhale;
+
+  /// No description provided for @daily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get daily;
+
+  /// No description provided for @weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get weekly;
+
+  /// No description provided for @monthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get monthly;
+
+  /// No description provided for @yearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get yearly;
+
+  /// No description provided for @noData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data available'**
+  String get noData;
+
+  /// No description provided for @errorLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading data'**
+  String get errorLoading;
+
+  /// No description provided for @refreshToRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull to refresh'**
+  String get refreshToRetry;
+
+  /// No description provided for @performanceByStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance by Strategy'**
+  String get performanceByStrategy;
+
+  /// No description provided for @performanceByDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance by Day'**
+  String get performanceByDay;
+
+  /// No description provided for @growthChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth Chart'**
+  String get growthChart;
+
+  /// No description provided for @averageProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Average Profit'**
+  String get averageProfit;
+
+  /// No description provided for @averageLoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Average Loss'**
+  String get averageLoss;
+
+  /// No description provided for @totalProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Profit'**
+  String get totalProfit;
+
+  /// No description provided for @totalLoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Loss'**
+  String get totalLoss;
+
+  /// No description provided for @profitFactor.
+  ///
+  /// In en, this message translates to:
+  /// **'Profit Factor'**
+  String get profitFactor;
+
+  /// No description provided for @trades.
+  ///
+  /// In en, this message translates to:
+  /// **'trades'**
+  String get trades;
+
+  /// No description provided for @sunday.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunday'**
+  String get sunday;
+
+  /// No description provided for @monday.
+  ///
+  /// In en, this message translates to:
+  /// **'Monday'**
+  String get monday;
+
+  /// No description provided for @tuesday.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuesday'**
+  String get tuesday;
+
+  /// No description provided for @wednesday.
+  ///
+  /// In en, this message translates to:
+  /// **'Wednesday'**
+  String get wednesday;
+
+  /// No description provided for @thursday.
+  ///
+  /// In en, this message translates to:
+  /// **'Thursday'**
+  String get thursday;
+
+  /// No description provided for @friday.
+  ///
+  /// In en, this message translates to:
+  /// **'Friday'**
+  String get friday;
+
+  /// No description provided for @saturday.
+  ///
+  /// In en, this message translates to:
+  /// **'Saturday'**
+  String get saturday;
+
+  /// No description provided for @sun.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get sun;
+
+  /// No description provided for @mon.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get mon;
+
+  /// No description provided for @tue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get tue;
+
+  /// No description provided for @wed.
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get wed;
+
+  /// No description provided for @thu.
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get thu;
+
+  /// No description provided for @fri.
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get fri;
+
+  /// No description provided for @sat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get sat;
+
+  /// No description provided for @noDataInTimeRange.
+  ///
+  /// In en, this message translates to:
+  /// **'No data in selected time range'**
+  String get noDataInTimeRange;
+
+  /// No description provided for @tapToViewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view details'**
+  String get tapToViewDetails;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @marketContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Market Context'**
+  String get marketContext;
+
+  /// No description provided for @noMarketData.
+  ///
+  /// In en, this message translates to:
+  /// **'No market data available for this time.'**
+  String get noMarketData;
+
+  /// No description provided for @socialVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Social Volume'**
+  String get socialVolume;
+
+  /// No description provided for @positive.
+  ///
+  /// In en, this message translates to:
+  /// **'Positive'**
+  String get positive;
+
+  /// No description provided for @negative.
+  ///
+  /// In en, this message translates to:
+  /// **'Negative'**
+  String get negative;
+
+  /// No description provided for @exchangeFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange Flow'**
+  String get exchangeFlow;
+
+  /// No description provided for @outflow.
+  ///
+  /// In en, this message translates to:
+  /// **'Outflow'**
+  String get outflow;
+
+  /// No description provided for @inflow.
+  ///
+  /// In en, this message translates to:
+  /// **'Inflow'**
+  String get inflow;
+
+  /// No description provided for @topHolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Top Holders Supply'**
+  String get topHolders;
+
+  /// No description provided for @activeAddresses.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Addresses (24h)'**
+  String get activeAddresses;
 }
 
 class _AppLocalizationsDelegate

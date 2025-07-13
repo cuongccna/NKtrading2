@@ -2,9 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../../../main.dart';
 import 'package:fl_chart/fl_chart.dart'; // Import thư viện biểu đồ
 import '../../../../../l10n/app_localizations.dart';
+import '../../../../core/providers/currency_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -21,11 +23,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchData();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refetch data when locale changes
     _fetchData();
   }
 
   void _fetchData() async {
-    // *** FIX: Xử lý trường hợp user_profile chưa được tạo ***
+    final currencyProvider = Provider.of<CurrencyProvider>(
+      context,
+      listen: false,
+    );
+    final currency = currencyProvider.currency;
+
     try {
       final userId = supabase.auth.currentUser!.id;
 
@@ -48,7 +64,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (mounted) {
         setState(() {
-          _preferredCurrency = currency;
           _dataFutures =
               Future.wait([
                 _fetchUserStats(_selectedTimeRange, currency),
@@ -79,7 +94,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _dataFutures = Future.error('Không thể tải dữ liệu: $e');
+          _dataFutures = Future.error('Error loading data: $e');
         });
       }
     }
@@ -93,7 +108,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'get-user-stats',
       body: {'timeRange': timeRange, 'targetCurrency': targetCurrency},
     );
-    if (result.data == null) throw 'Lỗi tải dữ liệu thống kê';
+    if (result.data == null) throw 'Error loading statistics';
     return result.data;
   }
 
@@ -105,13 +120,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'get-performance-charts',
       body: {'timeRange': timeRange, 'targetCurrency': targetCurrency},
     );
-    if (result.data == null) throw 'Lỗi tải dữ liệu biểu đồ';
+    if (result.data == null) throw 'Error loading charts';
     return result.data;
   }
 
   Future<Map<String, dynamic>> _fetchPerformancePatterns() async {
     final result = await supabase.functions.invoke('get-performance-patterns');
-    if (result.data == null) throw 'Lỗi tải dữ liệu phân tích';
+    if (result.data == null) throw 'Error loading patterns';
     return result.data;
   }
 
@@ -120,7 +135,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'get-top-trades',
       body: {'targetCurrency': targetCurrency},
     );
-    if (result.data == null) throw 'Lỗi tải dữ liệu top trades';
+    if (result.data == null) throw 'Error loading top trades';
     return result.data;
   }
 
@@ -164,9 +179,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _showTopTradesDialog(Map<String, dynamic> topTradesData) {
     final l10n = AppLocalizations.of(context)!;
-    final currencyFormatter = NumberFormat.currency(
-      locale: 'vi_VN',
-      symbol: '',
+    final currencyProvider = Provider.of<CurrencyProvider>(
+      context,
+      listen: false,
     );
     final topWinners = (topTradesData['topWinners'] as List<dynamic>?) ?? [];
     final topLosers = (topTradesData['topLosers'] as List<dynamic>?) ?? [];
@@ -174,7 +189,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Thống kê Lãi/Lỗ'),
+        title: Text(l10n.pnl),
         content: SizedBox(
           width: double.maxFinite,
           child: SingleChildScrollView(
@@ -187,13 +202,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 if (topWinners.isEmpty)
-                  const ListTile(title: Text('Không có dữ liệu.'))
+                  ListTile(title: Text(l10n.noValue))
                 else
                   ...topWinners.map(
                     (trade) => ListTile(
                       title: Text(trade['symbol']),
                       trailing: Text(
-                        '+${currencyFormatter.format(trade['pnl'])}',
+                        '+${currencyProvider.formatCurrency(trade['pnl'])}',
                         style: const TextStyle(color: Colors.greenAccent),
                       ),
                     ),
@@ -204,13 +219,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 if (topLosers.isEmpty)
-                  const ListTile(title: Text('Không có dữ liệu.'))
+                  ListTile(title: Text(l10n.noValue))
                 else
                   ...topLosers.map(
                     (trade) => ListTile(
                       title: Text(trade['symbol']),
                       trailing: Text(
-                        currencyFormatter.format(trade['pnl']),
+                        currencyProvider.formatCurrency(trade['pnl']),
                         style: const TextStyle(color: Colors.redAccent),
                       ),
                     ),
@@ -222,14 +237,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Đóng'),
+            child: Text(l10n.cancel),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEquityCurveChart(List<dynamic> equityData) {
+  Widget _buildEquityCurveChart(
+    List<dynamic> equityData,
+    AppLocalizations l10n,
+  ) {
     final List<FlSpot> spots = equityData.asMap().entries.map((entry) {
       final index = entry.key;
       final dataPoint = entry.value;
@@ -283,7 +301,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Biểu đồ tăng trưởng",
+              l10n.dashboard, // Use localized text
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 24),
@@ -353,10 +371,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStrategyPerformanceList(List<dynamic> performanceData) {
-    final currencyFormatter = NumberFormat.currency(
-      locale: 'vi_VN',
-      symbol: '',
+  Widget _buildStrategyPerformanceList(
+    List<dynamic> performanceData,
+    AppLocalizations l10n,
+  ) {
+    final currencyProvider = Provider.of<CurrencyProvider>(
+      context,
+      listen: false,
     );
 
     double maxPnl = 0;
@@ -374,7 +395,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Hiệu suất theo chiến lược",
+              l10n.bestPerformingStrategy,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
@@ -404,7 +425,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          '${winrate.toStringAsFixed(1)}% WR ($tradeCount lệnh)',
+                          '${winrate.toStringAsFixed(1)}% WR ($tradeCount ${l10n.tradeCount})',
                           style: TextStyle(
                             color: Colors.grey.shade400,
                             fontSize: 12,
@@ -427,7 +448,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          currencyFormatter.format(pnl),
+                          currencyProvider.formatCurrency(pnl),
                           style: TextStyle(
                             color: isProfit
                                 ? Colors.greenAccent
@@ -448,11 +469,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildDayOfWeekPerformanceChart(List<dynamic> performanceData) {
-    final currencyFormatter = NumberFormat.currency(
-      locale: 'vi_VN',
-      symbol: '',
+  Widget _buildDayOfWeekPerformanceChart(
+    List<dynamic> performanceData,
+    AppLocalizations l10n,
+  ) {
+    final currencyProvider = Provider.of<CurrencyProvider>(
+      context,
+      listen: false,
     );
+
+    // Get localized day names
+    final days = _getLocalizedDayNames(l10n);
+
     final barGroups = performanceData.map((data) {
       final day = (data['day'] as num).toInt();
       final pnl = (data['pnl'] as num).toDouble();
@@ -479,7 +507,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Hiệu suất theo ngày",
+              l10n.bestPerformingDay,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 24),
@@ -499,7 +527,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           children: <TextSpan>[
                             TextSpan(
-                              text: currencyFormatter.format(rod.toY),
+                              text: currencyProvider.formatCurrency(rod.toY),
                               style: TextStyle(
                                 color: rod.toY >= 0
                                     ? Colors.greenAccent
@@ -529,15 +557,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (double value, TitleMeta meta) {
-                          final days = [
-                            'CN',
-                            'T2',
-                            'T3',
-                            'T4',
-                            'T5',
-                            'T6',
-                            'T7',
-                          ];
                           final text = Text(
                             days[value.toInt()],
                             style: TextStyle(
@@ -566,39 +585,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildChartPlaceholder(BuildContext context, {required String title}) {
-    return Card(
-      child: Container(
-        height: 250,
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
-            const Expanded(
-              child: Center(
-                child: Icon(Icons.bar_chart, size: 60, color: Colors.grey),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  List<String> _getLocalizedDayNames(AppLocalizations l10n) {
+    final locale = Localizations.localeOf(context).languageCode;
+    if (locale == 'vi') {
+      return ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    } else {
+      return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    }
+  }
+
+  String _getLocalizedTimeRangeName(String key, AppLocalizations l10n) {
+    switch (key) {
+      case 'daily':
+        return l10n.dashboard; // Need to add these to localization
+      case 'weekly':
+        return l10n.dashboard;
+      case 'monthly':
+        return l10n.dashboard;
+      case 'yearly':
+        return l10n.dashboard;
+      case 'all':
+        return l10n.all;
+      default:
+        return key;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final currencyProvider = Provider.of<CurrencyProvider>(context);
+    final l10n = AppLocalizations.of(context)!;
+
     return FutureBuilder<List<dynamic>>(
       future: _dataFutures,
       builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         Widget buildTimeFilter() {
           final Map<String, String> timeRanges = {
-            'daily': 'Ngày',
-            'weekly': 'Tuần',
-            'monthly': 'Tháng',
-            'yearly': 'Năm',
-            'all': 'Tất cả',
+            'daily': _getLocalizedTimeRangeName('daily', l10n),
+            'weekly': _getLocalizedTimeRangeName('weekly', l10n),
+            'monthly': _getLocalizedTimeRangeName('monthly', l10n),
+            'yearly': _getLocalizedTimeRangeName('yearly', l10n),
+            'all': l10n.all,
           };
+
           return SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -632,12 +661,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text('Lỗi tải dữ liệu: ${snapshot.error}'),
+              child: Text('${l10n.noValue}: ${snapshot.error}'),
             ),
           );
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('Không có dữ liệu thống kê.'));
+          return Center(child: Text(l10n.noValue));
         }
 
         final stats = snapshot.data![0] as Map<String, dynamic>;
@@ -654,11 +683,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final totalTrades = stats['totalTrades'] ?? 0;
         final equityCurveData = stats['equityCurve'] as List<dynamic>? ?? [];
 
-        final currencyFormatter = NumberFormat.currency(
-          locale: _preferredCurrency == 'VND' ? 'vi_VN' : 'en_US',
-          symbol: _preferredCurrency == 'VND' ? '₫' : '\$',
-        );
-
         return RefreshIndicator(
           onRefresh: () async => _fetchData(),
           child: SingleChildScrollView(
@@ -671,12 +695,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 24),
 
                 if (totalTrades == 0)
-                  const Center(
+                  Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 48.0),
-                      child: Text(
-                        'Không có dữ liệu trong khoảng thời gian này.',
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 48.0),
+                      child: Text(l10n.noValue),
                     ),
                   )
                 else ...[
@@ -692,8 +714,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         onTap: () => _showTopTradesDialog(topTradesData),
                         child: _buildStatCard(
                           context,
-                          title: 'Tổng Lãi/Lỗ',
-                          value: currencyFormatter.format(totalPnl),
+                          title: l10n.pnl,
+                          value: currencyProvider.formatCurrency(totalPnl),
                           icon: Icons.show_chart,
                           valueColor: totalPnl >= 0
                               ? Colors.greenAccent
@@ -702,21 +724,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       _buildStatCard(
                         context,
-                        title: 'Tỷ lệ thắng',
+                        title: l10n.winrate,
                         value: '${winrate.toStringAsFixed(1)}%',
                         icon: Icons.pie_chart,
                       ),
                       _buildStatCard(
                         context,
-                        title: 'Lợi nhuận TB',
-                        value: currencyFormatter.format(averageWin),
+                        title: l10n.averagePnl,
+                        value: currencyProvider.formatCurrency(averageWin),
                         icon: Icons.trending_up,
                         valueColor: Colors.greenAccent,
                       ),
                       _buildStatCard(
                         context,
-                        title: 'Thua lỗ TB',
-                        value: currencyFormatter.format(averageLoss),
+                        title: l10n.averagePnl,
+                        value: currencyProvider.formatCurrency(averageLoss),
                         icon: Icons.trending_down,
                         valueColor: Colors.redAccent,
                       ),
@@ -725,61 +747,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 24),
 
                   if (equityCurveData.isNotEmpty)
-                    _buildEquityCurveChart(equityCurveData)
-                  else
-                    _buildChartPlaceholder(
-                      context,
-                      title: 'Biểu đồ tăng trưởng',
-                    ),
+                    _buildEquityCurveChart(equityCurveData, l10n),
 
                   const SizedBox(height: 16),
 
                   if (performanceData.isNotEmpty)
-                    _buildStrategyPerformanceList(performanceData)
-                  else
-                    Card(
-                      child: Container(
-                        height: 250,
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Hiệu suất theo chiến lược",
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const Expanded(
-                              child: Center(
-                                child: Text("Chưa có dữ liệu chiến lược."),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    _buildStrategyPerformanceList(performanceData, l10n),
 
                   const SizedBox(height: 16),
+
                   if (byDayOfWeekData.isNotEmpty)
-                    _buildDayOfWeekPerformanceChart(byDayOfWeekData)
-                  else
-                    Card(
-                      child: Container(
-                        height: 250,
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Hiệu suất theo ngày",
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const Expanded(
-                              child: Center(child: Text("Chưa có dữ liệu.")),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    _buildDayOfWeekPerformanceChart(byDayOfWeekData, l10n),
                 ],
               ],
             ),

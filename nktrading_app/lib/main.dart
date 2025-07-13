@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'app/features/auth/presentation/screens/splash_screen.dart';
 import 'app/core/presentation/widgets/error_boundary.dart';
 import 'app/core/providers/currency_provider.dart';
+import 'app/core/providers/locale_provider.dart';
 
 // *** THAY THẾ VỚI THÔNG TIN SUPABASE CỦA BẠN ***
 const String supabaseUrl =
@@ -23,48 +24,34 @@ Future<void> main() async {
 
 final supabase = Supabase.instance.client;
 
-class NKTradingApp extends StatefulWidget {
+class NKTradingApp extends StatelessWidget {
   const NKTradingApp({super.key});
-
-  @override
-  State<NKTradingApp> createState() => _NKTradingAppState();
-
-  // Hàm static để các widget con có thể thay đổi ngôn ngữ
-  static void setLocale(BuildContext context, Locale newLocale) {
-    _NKTradingAppState? state = context
-        .findAncestorStateOfType<_NKTradingAppState>();
-    state?.setLocale(newLocale);
-  }
-}
-
-class _NKTradingAppState extends State<NKTradingApp> {
-  // *** FIX: Đặt locale mặc định là 'vi' ***
-  Locale? _locale = const Locale('vi');
-
-  void setLocale(Locale locale) {
-    setState(() {
-      _locale = locale;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => CurrencyProvider())],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'NKTRADING',
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: _locale,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blueGrey,
-            brightness: Brightness.dark,
-          ),
-        ),
-        home: const ErrorBoundary(child: SplashScreen()),
+      providers: [
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => CurrencyProvider()),
+      ],
+      child: Consumer<LocaleProvider>(
+        builder: (context, localeProvider, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'NKTRADING',
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: localeProvider.locale,
+            theme: ThemeData(
+              useMaterial3: true,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.blueGrey,
+                brightness: Brightness.dark,
+              ),
+            ),
+            home: const ErrorBoundary(child: SplashScreen()),
+          );
+        },
       ),
     );
   }

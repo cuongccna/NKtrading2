@@ -2,14 +2,16 @@
 
 import 'package:flutter/material.dart';
 import '../../../../../l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
 import '../../../../main.dart';
+import '../../../core/providers/locale_provider.dart';
 
 import '../../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../../features/journal/presentation/screens/journal_screen.dart';
-import '../../../features/journal/presentation/screens/add_trade_screen.dart'; // Import
+import '../../../features/journal/presentation/screens/add_trade_screen.dart';
 import '../../../features/journal/presentation/widgets/filter_dialog.dart';
 import '../../../features/journal/data/models/trade_filter_model.dart';
-import '../../../features/ai_insights/presentation/screens/ai_insights_screen.dart'; // Import
+import '../../../features/ai_insights/presentation/screens/ai_insights_screen.dart';
 import '../../../features/connections/presentation/screens/settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -77,7 +79,7 @@ class _MainScreenState extends State<MainScreen> {
     final List<Widget> widgetOptions = <Widget>[
       JournalScreen(key: _journalScreenKey, filter: _currentFilter),
       const DashboardScreen(),
-      const AiInsightsScreen(), // Thêm màn hình mới
+      const AiInsightsScreen(),
     ];
 
     return Scaffold(
@@ -91,8 +93,16 @@ class _MainScreenState extends State<MainScreen> {
               onPressed: _showFilterDialog,
             ),
           PopupMenuButton<Locale>(
-            onSelected: (Locale locale) =>
-                NKTradingApp.setLocale(context, locale),
+            onSelected: (Locale locale) {
+              Provider.of<LocaleProvider>(
+                context,
+                listen: false,
+              ).setLocale(locale);
+              // Force rebuild screens
+              setState(() {
+                _journalScreenKey = UniqueKey();
+              });
+            },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<Locale>>[
               const PopupMenuItem<Locale>(
                 value: Locale('en'),
@@ -109,7 +119,6 @@ class _MainScreenState extends State<MainScreen> {
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
-              // *** FIX: Điều hướng đến SettingsScreen ***
               Navigator.of(
                 context,
               ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));

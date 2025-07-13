@@ -299,30 +299,121 @@ class AppLocalizationsVi extends AppLocalizations {
   String get vietnameseDong => 'Việt Nam Đồng';
 
   @override
+  String get whaleNetflow => 'Dòng tiền ròng của Cá voi trên Sàn';
+
+  @override
+  String get whaleToExchange => 'Chuyển lên Sàn';
+
+  @override
+  String get exchangeToWhale => 'Rút khỏi Sàn';
+
+  @override
+  String get daily => 'Ngày';
+
+  @override
+  String get weekly => 'Tuần';
+
+  @override
+  String get monthly => 'Tháng';
+
+  @override
+  String get yearly => 'Năm';
+
+  @override
+  String get noData => 'Không có dữ liệu';
+
+  @override
+  String get errorLoading => 'Lỗi tải dữ liệu';
+
+  @override
+  String get refreshToRetry => 'Kéo để làm mới';
+
+  @override
+  String get performanceByStrategy => 'Hiệu suất theo Chiến lược';
+
+  @override
+  String get performanceByDay => 'Hiệu suất theo Ngày';
+
+  @override
+  String get growthChart => 'Biểu đồ Tăng trưởng';
+
+  @override
+  String get averageProfit => 'Lợi nhuận TB';
+
+  @override
+  String get averageLoss => 'Thua lỗ TB';
+
+  @override
+  String get totalProfit => 'Tổng Lợi nhuận';
+
+  @override
+  String get totalLoss => 'Tổng Thua lỗ';
+
+  @override
+  String get profitFactor => 'Hệ số Lợi nhuận';
+
+  @override
+  String get trades => 'lệnh';
+
+  @override
+  String get sunday => 'Chủ Nhật';
+
+  @override
+  String get monday => 'Thứ Hai';
+
+  @override
+  String get tuesday => 'Thứ Ba';
+
+  @override
+  String get wednesday => 'Thứ Tư';
+
+  @override
+  String get thursday => 'Thứ Năm';
+
+  @override
+  String get friday => 'Thứ Sáu';
+
+  @override
+  String get saturday => 'Thứ Bảy';
+
+  @override
+  String get sun => 'CN';
+
+  @override
+  String get mon => 'T2';
+
+  @override
+  String get tue => 'T3';
+
+  @override
+  String get wed => 'T4';
+
+  @override
+  String get thu => 'T5';
+
+  @override
+  String get fri => 'T6';
+
+  @override
+  String get sat => 'T7';
+
+  @override
+  String get noDataInTimeRange => 'Không có dữ liệu trong khoảng thời gian này';
+
+  @override
+  String get tapToViewDetails => 'Nhấn để xem chi tiết';
+
+  @override
+  String get close => 'Đóng';
+
+  @override
   String get marketContext => 'Bối cảnh Thị trường';
 
   @override
-  String get smartMoneyChecklist => 'Checklist Dòng tiền Thông minh';
+  String get noMarketData => 'Không có dữ liệu thị trường cho thời điểm này.';
 
   @override
   String get socialVolume => 'Khối lượng Mạng xã hội';
-
-  @override
-  String get sentiment => 'Tâm lý';
-
-  @override
-  String get exchangeFlow => 'Dòng tiền trên Sàn';
-
-  @override
-  String get whaleActivity => 'Hành động Cá voi';
-
-  @override
-  String atTimeOfTrade(Object asset, Object value) {
-    return 'Tại thời điểm giao dịch, khối lượng mạng xã hội cho $asset là $value.';
-  }
-
-  @override
-  String get noMarketData => 'Không có dữ liệu thị trường cho thời điểm này.';
 
   @override
   String get positive => 'Tích cực';
@@ -331,26 +422,17 @@ class AppLocalizationsVi extends AppLocalizations {
   String get negative => 'Tiêu cực';
 
   @override
-  String get neutral => 'Trung lập';
-
-  @override
-  String get inflow => 'Nạp lên sàn';
+  String get exchangeFlow => 'Dòng tiền trên Sàn';
 
   @override
   String get outflow => 'Rút khỏi sàn';
+
+  @override
+  String get inflow => 'Nạp lên sàn';
 
   @override
   String get topHolders => '% Cung của Top Holders';
 
   @override
   String get activeAddresses => 'Địa chỉ hoạt động (24h)';
-
-  @override
-  String get whaleNetflow => 'Dòng tiền ròng của Cá voi trên Sàn';
-
-  @override
-  String get whaleToExchange => 'Chuyển lên Sàn';
-
-  @override
-  String get exchangeToWhale => 'Rút khỏi Sàn';
 }
