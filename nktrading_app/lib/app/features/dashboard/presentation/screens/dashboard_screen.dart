@@ -28,29 +28,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // *** FIX: Xử lý trường hợp user_profile chưa được tạo ***
     try {
       final userId = supabase.auth.currentUser!.id;
+
+      // First, ensure user profile exists
       final profileData = await supabase
           .from('user_profiles')
           .select('preferred_currency')
           .eq('id', userId)
-          .maybeSingle(); // Dùng maybeSingle() để không báo lỗi nếu không có dòng nào
+          .maybeSingle();
+
+      // If profile doesn't exist, create it
+      if (profileData == null) {
+        await supabase.from('user_profiles').insert({
+          'id': userId,
+          'preferred_currency': 'USD',
+        });
+      }
 
       final currency = (profileData?['preferred_currency'] as String?) ?? 'USD';
 
       if (mounted) {
         setState(() {
           _preferredCurrency = currency;
-          _dataFutures = Future.wait([
-            _fetchUserStats(_selectedTimeRange, currency),
-            _fetchPerformanceCharts(_selectedTimeRange, currency),
-            _fetchPerformancePatterns(),
-            _fetchTopTrades(currency),
-          ]);
+          _dataFutures =
+              Future.wait([
+                _fetchUserStats(_selectedTimeRange, currency),
+                _fetchPerformanceCharts(_selectedTimeRange, currency),
+                _fetchPerformancePatterns(),
+                _fetchTopTrades(currency),
+              ]).catchError((error) {
+                // If any single request fails, still show partial data
+                return Future.wait([
+                  _fetchUserStats(
+                    _selectedTimeRange,
+                    currency,
+                  ).catchError((_) => <String, dynamic>{}),
+                  _fetchPerformanceCharts(
+                    _selectedTimeRange,
+                    currency,
+                  ).catchError((_) => <dynamic>[]),
+                  _fetchPerformancePatterns().catchError(
+                    (_) => <String, dynamic>{},
+                  ),
+                  _fetchTopTrades(
+                    currency,
+                  ).catchError((_) => <String, dynamic>{}),
+                ]);
+              });
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _dataFutures = Future.error(e);
+          _dataFutures = Future.error('Không thể tải dữ liệu: $e');
         });
       }
     }

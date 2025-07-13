@@ -47,17 +47,13 @@ class _ApiKeyListViewState extends State<ApiKeyListView> {
   }
 
   Future<void> _syncTrades(String keyId, String exchange) async {
-    if (_syncingStatus[keyId] == true) return; // Tránh nhấn nhiều lần
+    if (_syncingStatus[keyId] == true) return;
 
     setState(() => _syncingStatus[keyId] = true);
 
     final l10n = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('${l10n.syncing} ${exchange}...')));
 
     try {
-      // Hiện tại chúng ta chỉ có function cho Binance
       if (exchange.toLowerCase() != 'binance') {
         throw 'Chức năng đồng bộ cho sàn $exchange chưa được hỗ trợ.';
       }
@@ -65,19 +61,57 @@ class _ApiKeyListViewState extends State<ApiKeyListView> {
       final result = await supabase.functions.invoke('sync-binance-trades');
 
       if (mounted) {
+        final data = result.data as Map<String, dynamic>?;
+        final message = data?['message'] ?? 'Hoàn tất!';
+        final errors = data?['errors'] as List<dynamic>?;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result.data['message'] ?? 'Hoàn tất!'),
-            backgroundColor: Colors.green,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(message),
+                if (errors != null && errors.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Một số lỗi: ${errors.first}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
+            backgroundColor: errors?.isNotEmpty == true
+                ? Colors.orange
+                : Colors.green,
+            duration: const Duration(seconds: 5),
           ),
         );
+
+        // Refresh danh sách nếu có dữ liệu được đồng bộ
+        final syncedCount = data?['syncedCount'] as int?;
+        if (syncedCount != null && syncedCount > 0) {
+          _refreshKeys();
+        }
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Lỗi đồng bộ: ';
+        if (e.toString().contains('Rate limit')) {
+          errorMessage += 'Vượt giới hạn yêu cầu. Vui lòng thử lại sau.';
+        } else if (e.toString().contains('Invalid API key')) {
+          errorMessage += 'API key không hợp lệ. Vui lòng kiểm tra lại.';
+        } else if (e.toString().contains('No trading symbols')) {
+          errorMessage += 'Không tìm thấy cặp giao dịch nào để đồng bộ.';
+        } else {
+          errorMessage += e.toString();
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi đồng bộ: $e'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }

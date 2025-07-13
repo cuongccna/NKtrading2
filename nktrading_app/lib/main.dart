@@ -4,9 +4,10 @@
 import 'package:flutter/material.dart';
 import 'package:nktrading_app/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
 import 'app/features/auth/presentation/screens/splash_screen.dart';
-
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import file được tạo tự động
+import 'app/core/presentation/widgets/error_boundary.dart';
+import 'app/core/providers/currency_provider.dart';
 
 // *** THAY THẾ VỚI THÔNG TIN SUPABASE CỦA BẠN ***
 const String supabaseUrl =
@@ -48,21 +49,23 @@ class _NKTradingAppState extends State<NKTradingApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'NKTRADING',
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      locale: _locale, // Sử dụng locale từ state
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blueGrey,
-          brightness: Brightness.dark,
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => CurrencyProvider())],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'NKTRADING',
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: _locale,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blueGrey,
+            brightness: Brightness.dark,
+          ),
         ),
-        // ... (các theme khác giữ nguyên)
+        home: const ErrorBoundary(child: SplashScreen()),
       ),
-      home: const SplashScreen(),
     );
   }
 }

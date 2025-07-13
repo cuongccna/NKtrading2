@@ -6,7 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const DUNE_API_URL = "https://api.dune.com/api/v1";
-const QUERY_ID = 3455459; // ID của query bạn đã cung cấp
+const QUERY_ID = 5455459; // ID của query bạn đã cung cấp
 
 // Hàm sleep để chờ giữa các lần kiểm tra
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

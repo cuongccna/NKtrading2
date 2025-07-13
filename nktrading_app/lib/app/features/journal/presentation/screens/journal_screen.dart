@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../../../main.dart';
-import 'trade_detail_screen.dart'; // Import màn hình chi tiết
-import '../../data/models/trade_filter_model.dart'; // Import
+import 'trade_detail_screen.dart';
+import '../../data/models/trade_filter_model.dart';
 import '../../../../../l10n/app_localizations.dart';
-import 'add_trade_screen.dart'; // Import
+import 'add_trade_screen.dart';
+import '../../../../core/providers/currency_provider.dart';
 
 class JournalScreen extends StatefulWidget {
   final TradeFilterModel filter;
@@ -125,7 +127,7 @@ class _JournalScreenState extends State<JournalScreen> {
         });
       }
     } catch (e) {
-      // ...
+      // Handle error
     }
   }
 
@@ -145,7 +147,7 @@ class _JournalScreenState extends State<JournalScreen> {
         )
         .then((result) {
           if (result == true) {
-            _fetchInitialTrades(); // Tải lại toàn bộ danh sách khi có thay đổi
+            _fetchInitialTrades();
           }
         });
   }
@@ -204,6 +206,8 @@ class _JournalScreenState extends State<JournalScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final currencyProvider = Provider.of<CurrencyProvider>(context);
+
     return Column(
       children: [
         Padding(
@@ -220,12 +224,12 @@ class _JournalScreenState extends State<JournalScreen> {
             ),
           ),
         ),
-        Expanded(child: _buildTradeList()),
+        Expanded(child: _buildTradeList(currencyProvider)),
       ],
     );
   }
 
-  Widget _buildTradeList() {
+  Widget _buildTradeList(CurrencyProvider currencyProvider) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -298,7 +302,7 @@ class _JournalScreenState extends State<JournalScreen> {
                       ),
                       if (pnl != null)
                         Text(
-                          '${pnl > 0 ? '+' : ''}${NumberFormat.currency(locale: 'vi_VN', symbol: '').format(pnl)}',
+                          '${pnl > 0 ? '+' : ''}${currencyProvider.formatCurrency(pnl)}',
                           style: TextStyle(
                             color: pnl > 0
                                 ? Colors.greenAccent
