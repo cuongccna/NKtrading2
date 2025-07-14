@@ -45,23 +45,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final userId = supabase.auth.currentUser!.id;
 
-      // First, ensure user profile exists
-      final profileData = await supabase
-          .from('user_profiles')
-          .select('preferred_currency')
-          .eq('id', userId)
-          .maybeSingle();
-
-      // If profile doesn't exist, create it
-      if (profileData == null) {
-        await supabase.from('user_profiles').insert({
-          'id': userId,
-          'preferred_currency': 'USD',
-        });
-      }
-
-      final currency = (profileData?['preferred_currency'] as String?) ?? 'USD';
-
       if (mounted) {
         setState(() {
           _dataFutures =
@@ -301,7 +284,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n.dashboard, // Use localized text
+              l10n.growthChart,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 24),
@@ -395,7 +378,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n.bestPerformingStrategy,
+              l10n.performanceByStrategy,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
@@ -425,7 +408,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          '${winrate.toStringAsFixed(1)}% WR ($tradeCount ${l10n.tradeCount})',
+                          '${winrate.toStringAsFixed(1)}% WR ($tradeCount ${l10n.trades})',
                           style: TextStyle(
                             color: Colors.grey.shade400,
                             fontSize: 12,
@@ -507,7 +490,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n.bestPerformingDay,
+              l10n.performanceByDay,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 24),
@@ -597,13 +580,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _getLocalizedTimeRangeName(String key, AppLocalizations l10n) {
     switch (key) {
       case 'daily':
-        return l10n.dashboard; // Need to add these to localization
+        return l10n.daily;
       case 'weekly':
-        return l10n.dashboard;
+        return l10n.weekly;
       case 'monthly':
-        return l10n.dashboard;
+        return l10n.monthly;
       case 'yearly':
-        return l10n.dashboard;
+        return l10n.yearly;
       case 'all':
         return l10n.all;
       default:
@@ -661,12 +644,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text('${l10n.noValue}: ${snapshot.error}'),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(l10n.errorLoading),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${snapshot.error}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
           );
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text(l10n.noValue));
+          return Center(child: Text(l10n.noData));
         }
 
         final stats = snapshot.data![0] as Map<String, dynamic>;
@@ -698,7 +697,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Center(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 48.0),
-                      child: Text(l10n.noValue),
+                      child: Text(l10n.noDataInTimeRange),
                     ),
                   )
                 else ...[
@@ -730,14 +729,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       _buildStatCard(
                         context,
-                        title: l10n.averagePnl,
+                        title: l10n.averageProfit,
                         value: currencyProvider.formatCurrency(averageWin),
                         icon: Icons.trending_up,
                         valueColor: Colors.greenAccent,
                       ),
                       _buildStatCard(
                         context,
-                        title: l10n.averagePnl,
+                        title: l10n.averageLoss,
                         value: currencyProvider.formatCurrency(averageLoss),
                         icon: Icons.trending_down,
                         valueColor: Colors.redAccent,
